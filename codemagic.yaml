@@ -31,6 +31,10 @@ workflows:
         script: |
           app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" \
             --type IOS_APP_STORE \
+            --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
+            --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
+            --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
+            --install-certificates \
             --create
       - name: Set up code signing settings on Xcode project
         script: |
