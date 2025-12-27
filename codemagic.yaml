@@ -17,8 +17,8 @@ workflows:
         script: |
           # Generates the native iOS projects
           npx expo prebuild --platform ios
-          # Patch Podfile to enforce deployment target for all pods to fix Xcode 16 build failures
-          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
+          # Patch Podfile with advanced flags for Xcode 16: iOS 18.0 target, Disable Bitcode, Use gnu++20 C++ standard
+          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['ENABLE_BITCODE'] = 'NO'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'\\n        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
