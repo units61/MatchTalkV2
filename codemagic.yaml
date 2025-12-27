@@ -48,7 +48,8 @@ workflows:
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
             --bundle-id "com.gkhnkyhns.matchtalk" \
-            --configuration Release
+            --configuration Release \
+            --export-method app-store
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
