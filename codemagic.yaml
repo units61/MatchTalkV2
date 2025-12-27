@@ -12,7 +12,7 @@ workflows:
       cocoapods: default
     scripts:
       - name: Install npm dependencies
-        script: npm install
+        script: npm install --legacy-peer-deps
       - name: Expo Prebuild
         script: |
           # Generates the native iOS projects
