@@ -11,7 +11,7 @@ workflows:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
         APP_STORE_CONNECT_ISSUER_ID: "4c6a0416-14cf-4b2b-8c84-9ddea974efe9"
-        APP_STORE_CONNECT_KEY_IDENTIFIER: "WD58URARVB"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "1GBAWKPWBDO1"
       node: v18.18.0
       xcode: latest
       cocoapods: default
@@ -29,6 +29,7 @@ workflows:
           keychain initialize
       - name: Fetch certificates and signing files
         script: |
+          # API anahtarı ile sertifikaları ve profilleri çekmeyi dene, yoksa oluştur
           app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" \
             --type IOS_APP_STORE \
             --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
@@ -38,7 +39,7 @@ workflows:
             --create
       - name: Set up code signing settings on Xcode project
         script: |
-          xcode-project use-profiles
+          xcode-project use-profiles --warn-only && ls -l ~/Library/MobileDevice/Provisioning\ Profiles
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
@@ -55,6 +56,6 @@ workflows:
     publishing:
       app_store_connect:
         issuer_id: 4c6a0416-14cf-4b2b-8c84-9ddea974efe9
-        key_id: WD58URARVB
+        key_id: 1GBAWKPWBDO1
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         submit_to_testflight: true
