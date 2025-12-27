@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.gkhnkyhns.matchtalk.v2",
+      "bundleIdentifier": "com.gkhnkyhns.matchtalk",
       "buildNumber": "7",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "MatchTalk sesli sohbet için mikrofon erişimi gerektirir.",
@@ -31,7 +31,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0f0c29"
       },
-      "package": "com.gkhnkyhns.matchtalk.v2"
+      "package": "com.gkhnkyhns.matchtalk"
     },
     "plugins": [
       [

@@ -6,7 +6,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.gkhnkyhns.matchtalk.v2
+        bundle_identifier: com.gkhnkyhns.matchtalk
       vars:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
@@ -29,7 +29,7 @@ workflows:
           keychain initialize
       - name: Fetch certificates and signing files
         script: |
-          app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk.v2" \
+          app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" \
             --type IOS_APP_STORE \
             --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
             --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
@@ -46,7 +46,7 @@ workflows:
           xcode-project build-ipa \
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
-            --bundle-id "com.gkhnkyhns.matchtalk.v2" \
+            --bundle-id "com.gkhnkyhns.matchtalk" \
             --configuration Release
     artifacts:
       - build/ios/ipa/*.ipa
