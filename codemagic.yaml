@@ -10,8 +10,10 @@ workflows:
       vars:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
-        APP_STORE_CONNECT_ISSUER_ID: "4c6a0416-14cf-4b2b-8c84-9ddea974efe9"
-        APP_STORE_CONNECT_KEY_IDENTIFIER: "1GBAWKPWBDO1"
+        # These will be fetched from the App Store Connect integration or environment groups
+        # APP_STORE_CONNECT_ISSUER_ID: "..."
+        # APP_STORE_CONNECT_KEY_IDENTIFIER: "..."
+        # APP_STORE_CONNECT_PRIVATE_KEY: "..."
       node: v18.18.0
       xcode: latest
       cocoapods: default
@@ -55,7 +57,5 @@ workflows:
       - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
-        issuer_id: 4c6a0416-14cf-4b2b-8c84-9ddea974efe9
-        key_id: 1GBAWKPWBDO1
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        auth: integration
         submit_to_testflight: true
