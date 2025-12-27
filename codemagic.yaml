@@ -17,19 +17,22 @@ workflows:
         script: |
           # Generates the native iOS projects
           npx expo prebuild --platform ios
-          # Patch Podfile with advanced flags for Xcode 16: iOS 18.0 target, Disable Bitcode, Use gnu++20 C++ standard
-          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['ENABLE_BITCODE'] = 'NO'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'\\n        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
+          # Patch Podfile with advanced flags for Xcode 16 and Architecture exclusions
+          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['ENABLE_BITCODE'] = 'NO'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'\\n        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'\\n        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
-      - name: Build iOS App (Release)
+      - name: Build iOS App (Device - No Signing)
         script: |
-          # Builds the app for simulator or device in Release mode
+          # Builds the app for Generic iOS Device (arm64) without code signing
+          # This verifies the project builds for device architecture
           xcodebuild build \
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
-            -sdk iphonesimulator \
+            -sdk iphoneos \
             -configuration Release \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
     artifacts:
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
