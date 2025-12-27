@@ -4,9 +4,14 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.gkhnkyhns.matchtalk
       vars:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
+        APP_STORE_CONNECT_ISSUER_ID: "4c6a0416-14cf-4b2b-8c84-9ddea974efe9"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "1GBAWKPWBDO1"
       node: v18.18.0
       xcode: latest
       cocoapods: default
@@ -19,20 +24,28 @@ workflows:
           npx expo prebuild --platform ios
           # Patch Podfile with advanced flags for Xcode 16 and Architecture exclusions
           ruby -e "text=File.read('ios/Podfile'); text=text.gsub(/^platform :ios, .*/, \"platform :ios, '18.0'\"); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['ENABLE_BITCODE'] = 'NO'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'\\n        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'\\n        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'\\n        config.build_settings['SWIFT_VERSION'] = '5.0'\\n        config.build_settings['ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES'] = target.name == 'MatchTalk' ? 'YES' : 'NO'\\n        config.build_settings['LIBRARY_SEARCH_PATHS'] = ['$(inherited)', '$(SDKROOT)/usr/lib/swift']\\n        config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
+      - name: Set up keychain to be used for codesigning
+        script: |
+          keychain initialize
+      - name: Fetch signing files from App Store Connect
+        script: |
+          app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" --type IOS_APP_STORE --create
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
-      - name: Build iOS App (Device - No Signing)
+      - name: Build iOS App (.ipa)
         script: |
-          # Builds the app for Generic iOS Device (arm64) without code signing
-          # This verifies the project builds for device architecture
-          xcodebuild build \
+          xcode-project build-ipa \
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
-            -sdk iphoneos \
-            -configuration Release \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
+            --configuration Release
     artifacts:
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_build_navigations_required: false
