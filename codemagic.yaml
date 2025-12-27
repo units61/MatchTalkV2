@@ -11,7 +11,7 @@ workflows:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
         APP_STORE_CONNECT_ISSUER_ID: "4c6a0416-14cf-4b2b-8c84-9ddea974efe9"
-        APP_STORE_CONNECT_KEY_IDENTIFIER: "1GBAWKPWBDO1"
+        APP_STORE_CONNECT_KEY_IDENTIFIER: "WD58URARVB"
       node: v18.18.0
       xcode: latest
       cocoapods: default
@@ -27,7 +27,7 @@ workflows:
       - name: Set up keychain to be used for codesigning
         script: |
           keychain initialize
-      - name: Fetch signing files from App Store Connect
+      - name: Fetch certificates and signing files
         script: |
           app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" \
             --type IOS_APP_STORE \
@@ -46,12 +46,13 @@ workflows:
           xcode-project build-ipa \
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
+            --bundle-id "com.gkhnkyhns.matchtalk" \
             --configuration Release
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
       app_store_connect:
         issuer_id: 4c6a0416-14cf-4b2b-8c84-9ddea974efe9
-        key_id: 1GBAWKPWBDO1
+        key_id: WD58URARVB
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         submit_to_testflight: true
