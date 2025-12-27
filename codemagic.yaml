@@ -8,7 +8,7 @@ workflows:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
       node: v18.18.0
-      xcode: latest
+      xcode: 15.4
       cocoapods: default
     scripts:
       - name: Install npm dependencies
