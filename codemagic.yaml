@@ -3,6 +3,8 @@ workflows:
     name: React Native iOS Build
     max_build_duration: 120
     instance_type: mac_mini_m1
+    integrations:
+      app_store_connect: YOUR_APP_STORE_CONNECT_KEY_NAME # Codemagic UI'da verdiğiniz anahtar ismini buraya yazın
     environment:
       ios_signing:
         distribution_type: app_store
