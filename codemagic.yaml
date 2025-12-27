@@ -45,8 +45,8 @@ workflows:
       - name: Build iOS App (.ipa)
         script: |
           xcode-project build-ipa \
-            -workspace ios/$XCODE_WORKSPACE \
-            -scheme $XCODE_SCHEME \
+            --workspace ios/$XCODE_WORKSPACE \
+            --scheme $XCODE_SCHEME \
             --bundle-id "com.gkhnkyhns.matchtalk" \
             --configuration Release \
             --export-method app-store
