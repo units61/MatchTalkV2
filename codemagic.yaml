@@ -17,20 +17,19 @@ workflows:
         script: |
           # Generates the native iOS projects
           npx expo prebuild --platform ios
+          # Patch Podfile to enforce deployment target for all pods to fix Xcode 16 build failures
+          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
-      - name: Install CocoaPods dependencies
+      - name: Build iOS App (Release)
         script: |
-          cd ios && pod install
-      - name: Build iOS App (Simulator)
-        script: |
-          # Builds the app for simulator to verify compilation without code signing
+          # Builds the app for simulator or device in Release mode
           xcodebuild build \
             -workspace ios/$XCODE_WORKSPACE \
             -scheme $XCODE_SCHEME \
             -sdk iphonesimulator \
-            -configuration Debug \
+            -configuration Release \
             CODE_SIGNING_ALLOWED=NO
     artifacts:
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
