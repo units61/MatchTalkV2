@@ -28,18 +28,14 @@ workflows:
           npx expo prebuild --platform ios
           # Patch Podfile with advanced flags for Xcode 16 and Architecture exclusions
           ruby -e "text=File.read('ios/Podfile'); text=text.gsub(/^platform :ios, .*/, \"platform :ios, '18.0'\"); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'\\n        config.build_settings['ENABLE_BITCODE'] = 'NO'\\n        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'\\n        config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'\\n        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'\\n        config.build_settings['SWIFT_VERSION'] = '5.0'\\n        config.build_settings['ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES'] = target.name == 'MatchTalk' ? 'YES' : 'NO'\\n        config.build_settings['LIBRARY_SEARCH_PATHS'] = ['$(inherited)', '$(SDKROOT)/usr/lib/swift']\\n        config.build_settings['DEAD_CODE_STRIPPING'] = 'NO'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
-      - name: Set up keychain to be used for codesigning
-        script: |
-          keychain initialize
       - name: Fetch certificates and signing files
         script: |
-          # API anahtarı ile sertifikaları ve profilleri çekmeyi dene, yoksa oluştur
-          app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" \
-            --type IOS_APP_STORE \
-            --issuer-id $APP_STORE_CONNECT_ISSUER_ID \
-            --key-id $APP_STORE_CONNECT_KEY_IDENTIFIER \
-            --private-key "$APP_STORE_CONNECT_PRIVATE_KEY" \
-            --create
+          # Önce anahtarlığı (keychain) temiz bir şekilde başlatıyoruz
+          keychain initialize
+          # Apple'dan yeşil onaylı dosyaları çekiyoruz
+          app-store-connect fetch-signing-files "com.gkhnkyhns.matchtalk" --type IOS_APP_STORE --create
+          # İndirilen sertifikaları keychain'e ekliyoruz
+          keychain add-certificates
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles --warn-only && ls -l ~/Library/MobileDevice/Provisioning\ Profiles
