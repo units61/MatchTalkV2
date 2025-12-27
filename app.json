@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "MatchTalk",
+    "slug": "matchtalk",
+    "version": "1.0.6",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0c29"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.gkhnkyhns.matchtalk",
+      "buildNumber": "7",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "MatchTalk sesli sohbet için mikrofon erişimi gerektirir.",
+        "NSCameraUsageDescription": "MatchTalk profil fotoğrafı için kamera erişimi gerektirir.",
+        "NSPhotoLibraryUsageDescription": "MatchTalk profil fotoğrafı için fotoğraf kütüphanesi erişimi gerektirir.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "associatedDomains": [
+        "applinks:matchtalk.app"
+      ]
+    },
+    "scheme": "matchtalk",
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f0c29"
+      },
+      "package": "com.gkhnkyhns.matchtalk"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.0"
+          }
+        }
+      ],
+      "expo-font"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9f0c850b-710f-4a44-8305-6996e335f738"
+      },
+      "SENTRY_DSN": "${SENTRY_DSN}",
+      "SENTRY_ENABLED": "true"
+    },
+    "owner": "gkhnkyhns-organization",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9f0c850b-710f-4a44-8305-6996e335f738"
+    }
+  }
+}
