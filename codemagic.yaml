@@ -8,7 +8,7 @@ workflows:
         XCODE_WORKSPACE: "MatchTalk.xcworkspace"
         XCODE_SCHEME: "MatchTalk"
       node: v18.18.0
-      xcode: 15.4
+      xcode: latest
       cocoapods: default
     scripts:
       - name: Install npm dependencies
@@ -17,6 +17,11 @@ workflows:
         script: |
           # Generates the native iOS projects
           npx expo prebuild --platform ios
+          # Patch Podfile to enforce deployment target for all pods to fix Xcode 16 build failures
+          ruby -e "text=File.read('ios/Podfile'); new_text=text.gsub('post_install do |installer|', \"post_install do |installer|\\n    installer.pods_project.targets.each do |target|\\n      target.build_configurations.each do |config|\\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'\\n      end\\n    end\"); File.write('ios/Podfile', new_text)"
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios && pod install
       - name: Install CocoaPods dependencies
         script: |
           cd ios && pod install
