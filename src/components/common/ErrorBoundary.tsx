@@ -53,6 +53,11 @@ export class ErrorBoundary extends Component<Props, State> {
           <Text style={styles.message}>
             {this.state.error?.message || 'Beklenmeyen bir hata oluştu'}
           </Text>
+          {__DEV__ && this.state.error && (
+            <Text style={styles.errorDetails}>
+              {this.state.error.stack?.substring(0, 500) || 'Stack trace yok'}
+            </Text>
+          )}
           <TouchableOpacity style={styles.button} onPress={this.handleReset}>
             <Text style={styles.buttonText}>Tekrar Dene</Text>
           </TouchableOpacity>
@@ -94,6 +99,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  errorDetails: {
+    color: '#ff6b6b',
+    fontSize: 12,
+    marginTop: 16,
+    marginBottom: 16,
+    padding: 12,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderRadius: 8,
+    fontFamily: 'monospace',
   },
 });
 

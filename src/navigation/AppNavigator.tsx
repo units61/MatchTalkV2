@@ -1,4 +1,5 @@
 import React, {useEffect, useRef} from 'react';
+import {View, Text} from 'react-native';
 import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
@@ -64,9 +65,14 @@ export function AppNavigator() {
     // Check onboarding status
     checkOnboardingCompleted()
       .then(completed => {
+        if (__DEV__) {
+          console.log('[AppNavigator] Onboarding completed:', completed);
+        }
         setShowOnboarding(!completed);
         if (completed) {
-          loadUser().catch(console.error);
+          loadUser().catch(error => {
+            console.error('[AppNavigator] Failed to load user:', error);
+          });
         }
       })
       .catch(error => {
@@ -126,7 +132,8 @@ export function AppNavigator() {
           const data = response?.notification?.request?.content?.data;
           if (data?.screen && navigationRef.current) {
             try {
-              navigationRef.current.navigate(data.screen as never, data.params as never);
+              // @ts-ignore - Navigation params type is complex
+              navigationRef.current.navigate(data.screen, data.params);
             } catch (error) {
               console.error('[AppNavigator] Navigation error from notification:', error);
             }
@@ -178,7 +185,8 @@ export function AppNavigator() {
     if (parsed) {
       console.log('[DeepLinking] Navigating to:', parsed);
       try {
-        navigationRef.current.navigate(parsed.screen as never, parsed.params as never);
+        // @ts-ignore - Navigation params type is complex
+        navigationRef.current.navigate(parsed.screen, parsed.params);
       } catch (error) {
         console.error('[DeepLinking] Navigation error:', error);
       }
@@ -225,7 +233,11 @@ export function AppNavigator() {
 
   // Show loading while checking onboarding
   if (showOnboarding === null) {
-    return null;
+    return (
+      <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
+        {/* Loading screen - prevents pink screen */}
+      </View>
+    );
   }
 
   return (

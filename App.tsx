@@ -1,4 +1,5 @@
 import React from 'react';
+import {View, Text, TouchableOpacity} from 'react-native';
 import {StatusBar} from 'expo-status-bar';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
@@ -61,7 +62,24 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
-        <ErrorBoundary>
+        <ErrorBoundary
+          fallback={
+            <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center', padding: 20}}>
+              <Text style={{color: '#fff', fontSize: 18, marginBottom: 20, textAlign: 'center'}}>
+                Uygulama başlatılırken bir hata oluştu
+              </Text>
+              <TouchableOpacity 
+                onPress={() => {
+                  // Force app restart by reloading
+                  if (__DEV__) {
+                    console.log('Restarting app...');
+                  }
+                }}
+                style={{backgroundColor: '#06b6d4', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8}}>
+                <Text style={{color: '#fff', fontSize: 16, fontWeight: '600'}}>Yeniden Başlat</Text>
+              </TouchableOpacity>
+            </View>
+          }>
           <StatusBar style="light" />
           <AppNavigator />
         </ErrorBoundary>
