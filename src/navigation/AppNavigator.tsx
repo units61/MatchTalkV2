@@ -63,13 +63,15 @@ export function AppNavigator() {
   const [showOnboarding, setShowOnboarding] = React.useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check onboarding status with timeout
+    // Check onboarding status with timeout - daha kısa timeout ve kesin fallback
     let timeoutId: NodeJS.Timeout;
+    let isMounted = true;
+    
     const timeoutPromise = new Promise<boolean>((resolve) => {
       timeoutId = setTimeout(() => {
-        console.warn('[AppNavigator] Onboarding check timeout, defaulting to show onboarding');
+        console.warn('[AppNavigator] Onboarding check timeout (1s), defaulting to show onboarding');
         resolve(false); // Timeout durumunda onboarding göster
-      }, 3000); // 3 saniye timeout
+      }, 1000); // 1 saniye timeout - daha hızlı
     });
 
     Promise.race([
@@ -77,6 +79,7 @@ export function AppNavigator() {
       timeoutPromise,
     ])
       .then(completed => {
+        if (!isMounted) return;
         clearTimeout(timeoutId);
         if (__DEV__) {
           console.log('[AppNavigator] Onboarding completed:', completed);
@@ -89,11 +92,26 @@ export function AppNavigator() {
         }
       })
       .catch(error => {
+        if (!isMounted) return;
         clearTimeout(timeoutId);
         console.error('[AppNavigator] Failed to check onboarding status:', error);
         // Default to showing onboarding on error
         setShowOnboarding(true);
       });
+
+    // Fallback: 2 saniye sonra kesinlikle onboarding göster
+    const fallbackTimeout = setTimeout(() => {
+      if (isMounted && showOnboarding === null) {
+        console.warn('[AppNavigator] Fallback timeout - forcing onboarding screen');
+        setShowOnboarding(true);
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      clearTimeout(fallbackTimeout);
+    };
   }, []);
 
   useEffect(() => {
