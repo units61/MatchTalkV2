@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,8 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -21,21 +21,21 @@ import Animated, {
   FadeIn,
   FadeOut,
 } from 'react-native-reanimated';
-import {LinearGradient} from 'expo-linear-gradient';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {RoomChat, RoomMessage} from '../components/v2/RoomChat';
-import {VoteModal} from '../components/v2/VoteModal';
-import {useAuthStore} from '../stores/authStore';
-import {useRoomsStore} from '../stores/roomsStore';
-import {useAgoraStore} from '../stores/agoraStore';
-import {useWebSocketStore} from '../stores/websocketStore';
-import {websocketClient} from '../lib/websocketClient';
-import {roomsApi, messagesApi} from '../services/api/roomsApi';
-import {agoraApi} from '../services/api/agoraApi';
-import {toast} from '../stores/toastStore';
-import {generateAvatarFromSeed, getGradientStyle} from '../utils/avatarUtils';
-import {Participant, Room} from '../types/room';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { RoomChat, RoomMessage } from '../components/v2/RoomChat';
+import { VoteModal } from '../components/v2/VoteModal';
+import { useAuthStore } from '../stores/authStore';
+import { useRoomsStore } from '../stores/roomsStore';
+import { useAgoraStore } from '../stores/agoraStore';
+import { useWebSocketStore } from '../stores/websocketStore';
+import { websocketClient } from '../lib/websocketClient';
+import { roomsApi, messagesApi } from '../services/api/roomsApi';
+import { agoraApi } from '../services/api/agoraApi';
+import { toast } from '../stores/toastStore';
+import { generateAvatarFromSeed, getGradientStyle } from '../utils/avatarUtils';
+import { Participant, Room } from '../types/room';
 import {
   RoomUpdateEvent,
   ExtensionVoteStartEvent,
@@ -44,17 +44,17 @@ import {
   RoomMessageEvent,
   SpeakerRequestCreatedEvent,
 } from '../types/websocket';
-import {getRelativeTime} from '../utils/timeUtils';
-import {trackEvent} from '../utils/analytics';
+import { getRelativeTime } from '../utils/timeUtils';
+import { trackEvent } from '../utils/analytics';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function RoomScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const {roomId} = route.params as {roomId?: string};
-  const {user} = useAuthStore();
-  const {currentRoom, setCurrentRoom, updateRoom, leaveRoom} = useRoomsStore();
+  const { roomId } = route.params as { roomId?: string };
+  const { user } = useAuthStore();
+  const { currentRoom, setCurrentRoom, updateRoom, leaveRoom } = useRoomsStore();
   const {
     isJoined: isAgoraJoined,
     joinChannel: joinAgoraChannel,
@@ -63,7 +63,7 @@ export default function RoomScreen() {
     publishAudio,
     isMuted: agoraIsMuted,
   } = useAgoraStore();
-  const {socket: wsSocket} = useWebSocketStore();
+  const { socket: wsSocket } = useWebSocketStore();
 
   // State
   const [remainingTime, setRemainingTime] = useState(300);
@@ -80,7 +80,7 @@ export default function RoomScreen() {
   const [pendingRequests, setPendingRequests] = useState<Array<{
     id: string;
     userId: string;
-    user: {id: string; name: string; gender: string};
+    user: { id: string; name: string; gender: string };
     createdAt: string;
   }>>([]);
   const [showRequestsModal, setShowRequestsModal] = useState(false);
@@ -237,11 +237,11 @@ export default function RoomScreen() {
       } catch (error) {
         console.error('Error joining Agora channel:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        if (
-          !errorMessage.includes('credentials not configured') &&
-          !errorMessage.includes('503')
-        ) {
-          toast.error('Ses bağlanamadı');
+
+        if (errorMessage.includes('credentials not configured')) {
+          toast.error('Ses sunucusu yapılandırması eksik');
+        } else {
+          toast.error('Ses bağlantısı kurulamadı');
         }
       }
     };
@@ -469,7 +469,7 @@ export default function RoomScreen() {
         return;
       }
 
-      socket.emit('extension-vote', {roomId, vote});
+      socket.emit('extension-vote', { roomId, vote });
       setHasVoted(true);
       setShowVoteModal(false);
     } catch (error) {
@@ -482,7 +482,7 @@ export default function RoomScreen() {
     if (!roomId) return;
 
     Alert.alert('Odadan Ayrıl', 'Odadan ayrılmak istediğinize emin misiniz?', [
-      {text: 'İptal', style: 'cancel'},
+      { text: 'İptal', style: 'cancel' },
       {
         text: 'Ayrıl',
         style: 'destructive',
@@ -514,7 +514,7 @@ export default function RoomScreen() {
     const radius = 120;
     const x = Math.cos((angle * Math.PI) / 180) * radius;
     const y = Math.sin((angle * Math.PI) / 180) * radius;
-    return {x: width / 2 + x, y: 200 + y};
+    return { x: width / 2 + x, y: 200 + y };
   };
 
   if (!roomId) {
@@ -576,8 +576,8 @@ export default function RoomScreen() {
                 {avatar?.gradient ? (
                   <LinearGradient
                     colors={[avatar.gradient.from, avatar.gradient.to]}
-                    start={{x: 0, y: 0}}
-                    end={{x: 1, y: 1}}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={[
                       styles.avatarGradient,
                       participant.isSpeaking && styles.avatarSpeaking,

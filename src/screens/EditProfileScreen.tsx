@@ -1,21 +1,21 @@
-import React, {useState, useEffect} from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import {LinearGradient} from 'expo-linear-gradient';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {LoadingSpinner} from '../components/v2/LoadingSpinner';
-import {useAuthStore} from '../stores/authStore';
-import {usersApi} from '../services/api/usersApi';
-import {toast} from '../stores/toastStore';
-import {generateAvatarFromSeed} from '../utils/avatarUtils';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { LoadingSpinner } from '../components/v2/LoadingSpinner';
+import { useAuthStore } from '../stores/authStore';
+import { usersApi } from '../services/api/usersApi';
+import { toast } from '../stores/toastStore';
+import { generateAvatarFromSeed } from '../utils/avatarUtils';
 
 export default function EditProfileScreen() {
   const navigation = useNavigation();
-  const {user, updateProfile} = useAuthStore();
+  const { user, updateProfile, loadUser } = useAuthStore();
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [gender, setGender] = useState<'male' | 'female' | 'other'>('other');
@@ -32,7 +32,7 @@ export default function EditProfileScreen() {
 
   const handleAvatarUpload = async () => {
     try {
-      const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         toast.error('Fotoğraf kütüphanesi erişimi gerekli');
         return;
@@ -57,18 +57,10 @@ export default function EditProfileScreen() {
       }
 
       setUploading(true);
-      const formData = new FormData();
-      formData.append('avatar', {
-        uri: asset.uri,
-        type: 'image/jpeg',
-        name: 'avatar.jpg',
-      } as any);
+      await usersApi.uploadAvatar(asset.uri);
 
-      await usersApi.uploadAvatar(formData);
-      
-      if (user) {
-        await updateProfile({name: user.name});
-      }
+      // Profil verilerini ve fotoğrafı tüm uygulamada anında güncelle
+      await loadUser();
 
       toast.info('Profil fotoğrafınız başarıyla güncellendi.');
     } catch (error) {
@@ -84,6 +76,8 @@ export default function EditProfileScreen() {
       await updateProfile({
         name: username,
       });
+      // Verileri anında yenile
+      await loadUser();
       toast.info('Profil bilgileriniz başarıyla kaydedildi.');
       navigation.goBack();
     } catch (error) {
@@ -130,7 +124,7 @@ export default function EditProfileScreen() {
           <View style={styles.avatarContainer}>
             <View style={styles.avatarWrapper}>
               {user.avatar ? (
-                <Image source={{uri: user.avatar}} style={styles.avatar} />
+                <Image source={{ uri: user.avatar }} style={styles.avatar} />
               ) : (
                 <LinearGradient
                   colors={['#06b6d4', '#a855f7']}
@@ -218,8 +212,8 @@ export default function EditProfileScreen() {
               ) : (
                 <LinearGradient
                   colors={['#06b6d4', '#a855f7']}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}>
                   <Ionicons name="save-outline" size={20} color="white" />
                   <Text style={styles.buttonText}>Kaydet</Text>

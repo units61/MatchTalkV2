@@ -1,10 +1,10 @@
-import React, {useEffect, useRef} from 'react';
-import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import React, { useEffect, useRef } from 'react';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useAuthStore} from '../stores/authStore';
-import {checkOnboardingCompleted} from '../screens/OnboardingScreen';
+import { useAuthStore } from '../stores/authStore';
+import { checkOnboardingCompleted } from '../screens/OnboardingScreen';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -47,42 +47,57 @@ function MainTabs() {
 }
 
 export function AppNavigator() {
-  const {isAuthenticated, loadUser} = useAuthStore();
+  const { isAuthenticated, loadUser } = useAuthStore();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const [showOnboarding, setShowOnboarding] = React.useState<boolean>(true);
   const [isReady, setIsReady] = React.useState(false);
 
-  // Onboarding kontrolü - basit ve güvenli
+  // Onboarding kontrolü - Gelişmiş ve Güvenli (Fallback Timeout dahil)
   useEffect(() => {
     let mounted = true;
-    
+
+    // Güvenlik Zaman Aşımı (Fallback): 3 saniye içinde init tamamlanmazsa zorla aç
+    const fallbackTimer = setTimeout(() => {
+      if (mounted && !isReady) {
+        console.warn('[AppNavigator] Başlatma süresi aşıldı, güvenli modda açılıyor...');
+        setIsReady(true);
+      }
+    }, 3000);
+
     const init = async () => {
       try {
         const completed = await checkOnboardingCompleted();
         if (mounted) {
           setShowOnboarding(!completed);
-          
+
           // Eğer onboarding tamamsa kullanıcıyı yükle
           if (completed) {
-            loadUser().catch(console.error);
+            try {
+              await loadUser();
+            } catch (authError) {
+              console.error('[AppNavigator] Kullanıcı yüklenemedi:', authError);
+            }
           }
         }
       } catch (e) {
-        // Hata olsa bile onboarding göster
+        console.error('[AppNavigator] Onboarding kontrolü hatası:', e);
+        // Hata olsa bile onboarding göstererek devam et
         if (mounted) {
           setShowOnboarding(true);
         }
       } finally {
         if (mounted) {
+          clearTimeout(fallbackTimer);
           setIsReady(true);
         }
       }
     };
-    
+
     init();
-    
+
     return () => {
       mounted = false;
+      clearTimeout(fallbackTimer);
     };
   }, [loadUser]);
 
@@ -113,10 +128,10 @@ export function AppNavigator() {
   // Tüm ekranları her zaman tanımla - initialRouteName ile kontrol et
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
-      <Stack.Navigator 
-        screenOptions={{ 
-          headerShown: false, 
-          contentStyle: {backgroundColor: '#0f0c29'} 
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: '#0f0c29' }
         }}
         initialRouteName={showOnboarding ? "Onboarding" : (!isAuthenticated ? "Login" : "MainTabs")}>
         <Stack.Screen name="Onboarding">
