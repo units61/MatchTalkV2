@@ -27,7 +27,9 @@ export class ErrorBoundary extends Component<Props, State> {
     try {
       captureException(error, {
         component: 'ErrorBoundary',
-        errorInfo: errorInfo.componentStack,
+        additionalData: {
+          componentStack: errorInfo.componentStack,
+        },
       }, 'high');
     } catch (sentryError) {
       // Sentry'ye gönderirken hata olursa uygulama crash olmasın
