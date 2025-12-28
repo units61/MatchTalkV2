@@ -86,6 +86,20 @@ export function AppNavigator() {
     };
   }, [loadUser]);
 
+  // Login sonrası MainTabs'a navigate et
+  useEffect(() => {
+    if (isReady && isAuthenticated && navigationRef.current) {
+      // Login başarılı, MainTabs'a git
+      // Kısa bir delay ile navigate et ki state güncellemesi tamamlansın
+      const timer = setTimeout(() => {
+        if (navigationRef.current) {
+          navigationRef.current.navigate('MainTabs');
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isReady]);
+
   // Loading ekranı - çok kısa
   if (!isReady) {
     return null; // Native splash screen gösterilsin
