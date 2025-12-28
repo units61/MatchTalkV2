@@ -60,34 +60,36 @@ export function AppNavigator() {
   const {connect, disconnect} = useWebSocketStore();
   const {setNavigateRef} = useNavigationStore();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  const [isReady, setIsReady] = React.useState(false);
   const [showOnboarding, setShowOnboarding] = React.useState<boolean>(true);
 
+  // Onboarding kontrolü - arka planda yap, blocking yapma
   useEffect(() => {
+    let mounted = true;
+    
     const init = async () => {
       try {
-        // 1. Onboarding kontrolü - timeout ile güvenlik
-        const onboardingPromise = checkOnboardingCompleted();
-        const timeoutPromise = new Promise<boolean>((resolve) => {
-          setTimeout(() => resolve(false), 2000); // 2 saniye timeout
-        });
-        
-        const completed = await Promise.race([onboardingPromise, timeoutPromise]);
-        setShowOnboarding(!completed);
-        
-        // 2. Eğer onboarding tamamsa kullanıcıyı yükle
-        if (completed) {
-          await loadUser();
+        const completed = await checkOnboardingCompleted();
+        if (mounted) {
+          setShowOnboarding(!completed);
+          
+          // Eğer onboarding tamamsa kullanıcıyı yükle
+          if (completed) {
+            loadUser().catch(console.error);
+          }
         }
       } catch (e) {
         // Hata olsa bile onboarding göster
-        setShowOnboarding(true);
-      } finally {
-        // 3. Her durumda uygulamayı "hazır" hale getir ki ekran açılsın
-        setIsReady(true);
+        if (mounted) {
+          setShowOnboarding(true);
+        }
       }
     };
+    
     init();
+    
+    return () => {
+      mounted = false;
+    };
   }, [loadUser]);
 
   useEffect(() => {
@@ -240,50 +242,38 @@ export function AppNavigator() {
     },
   };
 
-  // Loading ekranını KALDIR - App.tsx zaten yönetiyor
-  // Direkt navigation'a geç, showOnboarding state'ine göre ekran gösterilecek
-
+  // Tüm ekranları her zaman tanımla - conditional rendering sorun çıkarıyor
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator 
         screenOptions={{ 
           headerShown: false, 
           contentStyle: {backgroundColor: '#0f0c29'} 
-        }}>
-        {showOnboarding ? (
-          // DURUM A: Onboarding tamamlanmamışsa SADECE Onboarding göster
-          <Stack.Screen name="Onboarding">
-            {(props) => (
-              <OnboardingScreen
-                {...props}
-                onComplete={async () => {
-                  await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
-                  setShowOnboarding(false);
-                }}
-              />
-            )}
-          </Stack.Screen>
-        ) : !isAuthenticated ? (
-          // DURUM B: Onboarding tamam ama giriş yapılmamışsa Auth ekranlarını göster
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          </>
-        ) : (
-          // DURUM C: Giriş yapılmışsa Ana Uygulamayı göster
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="Room" component={RoomScreen} />
-            <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="Matching" component={MatchingScreen} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-            <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
-            <Stack.Screen name="Chat" component={ChatScreen} />
-          </>
-        )}
+        }}
+        initialRouteName={showOnboarding ? "Onboarding" : (!isAuthenticated ? "Login" : "MainTabs")}>
+        <Stack.Screen name="Onboarding">
+          {(props) => (
+            <OnboardingScreen
+              {...props}
+              onComplete={async () => {
+                await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
+                setShowOnboarding(false);
+              }}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Room" component={RoomScreen} />
+        <Stack.Screen name="Friends" component={FriendsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Matching" component={MatchingScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
