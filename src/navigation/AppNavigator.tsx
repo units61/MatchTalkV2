@@ -261,7 +261,17 @@ export function AppNavigator() {
           contentStyle: {backgroundColor: '#0f0c29'},
         }}>
         {showOnboarding ? (
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Onboarding">
+            {(props) => (
+              <OnboardingScreen
+                {...props}
+                onComplete={() => {
+                  // Onboarding tamamlandı, Login ekranını göster
+                  setShowOnboarding(false);
+                }}
+              />
+            )}
+          </Stack.Screen>
         ) : !isAuthenticated ? (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />

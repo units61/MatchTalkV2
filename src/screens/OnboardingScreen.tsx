@@ -42,7 +42,11 @@ const steps = [
   },
 ];
 
-export default function OnboardingScreen() {
+interface OnboardingScreenProps {
+  onComplete?: () => void;
+}
+
+export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {}) {
   const [currentStep, setCurrentStep] = useState(0);
   const navigation = useNavigation();
   const translateX = useSharedValue(0);
@@ -54,13 +58,25 @@ export default function OnboardingScreen() {
       translateX.value = withTiming(-width * nextStep, {duration: 300});
     } else {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-      navigation.navigate('Login' as never);
+      // Callback ile AppNavigator'a bildir
+      if (onComplete) {
+        onComplete();
+      } else {
+        // Fallback: direkt navigate et
+        navigation.navigate('Login' as never);
+      }
     }
   };
 
   const handleSkip = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    navigation.navigate('Login' as never);
+    // Callback ile AppNavigator'a bildir
+    if (onComplete) {
+      onComplete();
+    } else {
+      // Fallback: direkt navigate et
+      navigation.navigate('Login' as never);
+    }
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
