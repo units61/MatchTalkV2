@@ -17,7 +17,7 @@ workflows:
         SENTRY_ENABLED: "true"
         SENTRY_ORG: "matchtalk"
         SENTRY_PROJECT: "matchtalk-ios"
-        SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"  # Codemagic UI'dan environment variable olarak ekleyin
+        SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"  # CodeMagic UI'dan environment variable olarak eklenmeli
         # These will be fetched from the App Store Connect integration or environment groups
         # APP_STORE_CONNECT_ISSUER_ID: "..."
         # APP_STORE_CONNECT_KEY_IDENTIFIER: "..."
@@ -56,16 +56,23 @@ workflows:
             --config Release
       - name: Upload Sentry Source Maps
         script: |
-          if [ -f "sentry.properties" ]; then
+          if [ -n "$SENTRY_AUTH_TOKEN" ]; then
             VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
             echo "Uploading source maps for version $VERSION"
+            # sentry.properties dosyasını oluştur (token environment variable'dan)
+            cat > sentry.properties << EOF
+          defaults.url=https://sentry.io/
+          defaults.org=matchtalk
+          defaults.project=matchtalk-ios
+          auth.token=$SENTRY_AUTH_TOKEN
+          EOF
             # sentry.properties dosyasından token ve config okunacak
             npx @sentry/cli releases new "$VERSION" || true
             npx @sentry/cli releases files "$VERSION" upload-sourcemaps ios/build/Build/Products/Release-iphoneos/MatchTalk.app || true
             npx @sentry/cli releases finalize "$VERSION" || true
             echo "Source maps upload completed"
           else
-            echo "sentry.properties file not found, skipping source maps upload"
+            echo "SENTRY_AUTH_TOKEN not set, skipping source maps upload"
           fi
     artifacts:
       - build/ios/ipa/*.ipa
