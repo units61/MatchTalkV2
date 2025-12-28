@@ -5,12 +5,20 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ONBOARDING_KEY = '@matchtalk_onboarding_completed';
 
-export default function OnboardingScreen() {
+interface OnboardingScreenProps {
+  onComplete?: () => Promise<void>;
+}
+
+export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {}) {
   const navigation = useNavigation();
 
   const handleComplete = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    navigation.navigate('Login' as never);
+    if (onComplete) {
+      await onComplete();
+    } else {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      navigation.navigate('Login' as never);
+    }
   };
 
   // EN BASİT HAL - hiçbir custom component yok, hiçbir animasyon yok
