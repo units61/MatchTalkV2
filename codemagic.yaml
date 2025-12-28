@@ -56,17 +56,16 @@ workflows:
             --config Release
       - name: Upload Sentry Source Maps
         script: |
-          if [ -n "$SENTRY_AUTH_TOKEN" ] && [ -n "$SENTRY_ORG" ] && [ -n "$SENTRY_PROJECT" ]; then
+          if [ -f "sentry.properties" ]; then
             VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
             echo "Uploading source maps for version $VERSION"
-            # sentry.properties dosyasını kullan (--org ve --project parametrelerini kaldır)
-            export SENTRY_AUTH_TOKEN="$SENTRY_AUTH_TOKEN"
+            # sentry.properties dosyasından token ve config okunacak
             npx @sentry/cli releases new "$VERSION" || true
             npx @sentry/cli releases files "$VERSION" upload-sourcemaps ios/build/Build/Products/Release-iphoneos/MatchTalk.app || true
             npx @sentry/cli releases finalize "$VERSION" || true
             echo "Source maps upload completed"
           else
-            echo "Sentry variables not set, skipping source maps upload"
+            echo "sentry.properties file not found, skipping source maps upload"
           fi
     artifacts:
       - build/ios/ipa/*.ipa

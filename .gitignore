@@ -24,3 +24,6 @@ ios/Pods/
 ios/build/
 android/app/build/
 android/.gradle
+
+# Sentry (contains auth token)
+sentry.properties
