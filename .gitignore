@@ -27,3 +27,4 @@ android/.gradle
 
 # Sentry (contains auth token)
 sentry.properties
+.sentryclirc
