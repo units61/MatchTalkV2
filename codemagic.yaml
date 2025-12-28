@@ -59,6 +59,9 @@ workflows:
           if [ -n "$SENTRY_AUTH_TOKEN" ]; then
             VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
             echo "Uploading source maps for version $VERSION"
+            # Token'ın ilk 10 karakterini göster (debug için)
+            TOKEN_PREFIX=$(echo "$SENTRY_AUTH_TOKEN" | cut -c1-10)
+            echo "Token prefix: $TOKEN_PREFIX..."
             # sentry.properties dosyasını oluştur (token environment variable'dan)
             cat > sentry.properties << EOF
           defaults.url=https://sentry.io/
