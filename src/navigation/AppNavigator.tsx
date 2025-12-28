@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../stores/authStore';
 import { checkOnboardingCompleted } from '../screens/OnboardingScreen';
@@ -52,42 +53,41 @@ export function AppNavigator() {
   const [showOnboarding, setShowOnboarding] = React.useState<boolean>(true);
   const [isReady, setIsReady] = React.useState(false);
 
-  // Onboarding kontrolü - Gelişmiş ve Güvenli (Fallback Timeout dahil)
+  // Onboarding kontrolü - Kökten Çözüm (Zaman Aşımı Korumalı)
   useEffect(() => {
     let mounted = true;
 
-    // Güvenlik Zaman Aşımı (Fallback): 3 saniye içinde init tamamlanmazsa zorla aç
-    const fallbackTimer = setTimeout(() => {
-      if (mounted && !isReady) {
-        console.warn('[AppNavigator] Başlatma süresi aşıldı, güvenli modda açılıyor...');
-        setIsReady(true);
-      }
-    }, 3000);
+    const timeout = (ms: number) => new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Timeout')), ms)
+    );
 
     const init = async () => {
       try {
-        const completed = await checkOnboardingCompleted();
+        // En fazla 2 saniye bekle, cevap gelmezse varsayılan değerlerle devam et
+        const completed = await Promise.race([
+          checkOnboardingCompleted(),
+          timeout(2000).then(() => false)
+        ]) as boolean;
+
         if (mounted) {
           setShowOnboarding(!completed);
 
-          // Eğer onboarding tamamsa kullanıcıyı yükle
           if (completed) {
+            // Kullanıcı yükleme işlemini de zaman aşımı ile koru
             try {
-              await loadUser();
-            } catch (authError) {
-              console.error('[AppNavigator] Kullanıcı yüklenemedi:', authError);
+              await Promise.race([
+                loadUser(),
+                timeout(2000)
+              ]);
+            } catch (e) {
+              console.warn('[AppNavigator] Kullanıcı yükleme zaman aşımı veya hata.');
             }
           }
         }
       } catch (e) {
-        console.error('[AppNavigator] Onboarding kontrolü hatası:', e);
-        // Hata olsa bile onboarding göstererek devam et
-        if (mounted) {
-          setShowOnboarding(true);
-        }
+        console.error('[AppNavigator] Kritik başlatma hatası:', e);
       } finally {
         if (mounted) {
-          clearTimeout(fallbackTimer);
           setIsReady(true);
         }
       }
@@ -95,29 +95,47 @@ export function AppNavigator() {
 
     init();
 
+    // Güvenlik: Eğer 3.5 saniye içinde isReady hala false ise zorla aç
+    const forceTimer = setTimeout(() => {
+      if (mounted && !isReady) {
+        setIsReady(true);
+      }
+    }, 3500);
+
     return () => {
       mounted = false;
-      clearTimeout(fallbackTimer);
+      clearTimeout(forceTimer);
     };
   }, [loadUser]);
 
   // Login sonrası MainTabs'a navigate et
   useEffect(() => {
     if (isReady && isAuthenticated && navigationRef.current) {
-      // Login başarılı, MainTabs'a git
-      // Kısa bir delay ile navigate et ki state güncellemesi tamamlansın
       const timer = setTimeout(() => {
         if (navigationRef.current) {
-          navigationRef.current.navigate('MainTabs');
+          // getCurrentRoute() ile zaten MainTabs'ta olup olmadığını kontrol et
+          const currentRoute = navigationRef.current.getCurrentRoute();
+          if (currentRoute?.name !== 'MainTabs') {
+            navigationRef.current.navigate('MainTabs');
+          }
         }
       }, 100);
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, isReady]);
 
-  // Loading ekranı - çok kısa
+  // Loading ekranı - Kökten çözüm: Beyaz/Boş ekranı Spinner ile değiştir
   if (!isReady) {
-    return null; // Native splash screen gösterilsin
+    return (
+      <View style={{
+        flex: 1,
+        backgroundColor: '#0f0c29',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <ActivityIndicator size="large" color="#22d3ee" />
+      </View>
+    );
   }
 
   // Linking configuration
