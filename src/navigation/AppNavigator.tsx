@@ -60,57 +60,53 @@ export function AppNavigator() {
   const {connect, disconnect} = useWebSocketStore();
   const {setNavigateRef} = useNavigationStore();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  const [showOnboarding, setShowOnboarding] = React.useState<boolean | null>(null);
+  // Başlangıçta true yap - kontrol sonrası güncellenecek
+  const [showOnboarding, setShowOnboarding] = React.useState<boolean>(true);
 
   useEffect(() => {
-    // Check onboarding status with timeout - daha kısa timeout ve kesin fallback
+    // Check onboarding status with timeout
     let timeoutId: NodeJS.Timeout;
     let isMounted = true;
     
-    const timeoutPromise = new Promise<boolean>((resolve) => {
-      timeoutId = setTimeout(() => {
-        console.warn('[AppNavigator] Onboarding check timeout (1s), defaulting to show onboarding');
-        resolve(false); // Timeout durumunda onboarding göster
-      }, 1000); // 1 saniye timeout - daha hızlı
-    });
+    const checkOnboarding = async () => {
+      try {
+        const timeoutPromise = new Promise<boolean>((resolve) => {
+          timeoutId = setTimeout(() => {
+            console.warn('[AppNavigator] Onboarding check timeout (500ms), defaulting to show onboarding');
+            resolve(false); // Timeout durumunda onboarding göster
+          }, 500); // 500ms timeout - çok hızlı
+        });
 
-    Promise.race([
-      checkOnboardingCompleted(),
-      timeoutPromise,
-    ])
-      .then(completed => {
+        const completed = await Promise.race([
+          checkOnboardingCompleted(),
+          timeoutPromise,
+        ]);
+
         if (!isMounted) return;
         clearTimeout(timeoutId);
-        if (__DEV__) {
-          console.log('[AppNavigator] Onboarding completed:', completed);
-        }
+        
+        console.log('[AppNavigator] Onboarding check result:', completed);
         setShowOnboarding(!completed);
+        
         if (completed) {
           loadUser().catch(error => {
             console.error('[AppNavigator] Failed to load user:', error);
           });
         }
-      })
-      .catch(error => {
+      } catch (error) {
         if (!isMounted) return;
         clearTimeout(timeoutId);
         console.error('[AppNavigator] Failed to check onboarding status:', error);
         // Default to showing onboarding on error
         setShowOnboarding(true);
-      });
-
-    // Fallback: 2 saniye sonra kesinlikle onboarding göster
-    const fallbackTimeout = setTimeout(() => {
-      if (isMounted && showOnboarding === null) {
-        console.warn('[AppNavigator] Fallback timeout - forcing onboarding screen');
-        setShowOnboarding(true);
       }
-    }, 2000);
+    };
+
+    checkOnboarding();
 
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      clearTimeout(fallbackTimeout);
     };
   }, []);
 
@@ -275,14 +271,7 @@ export function AppNavigator() {
     },
   };
 
-  // Show loading while checking onboarding
-  if (showOnboarding === null) {
-    return (
-      <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
-        <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold'}}>MatchTalk</Text>
-      </View>
-    );
-  }
+  // Loading ekranı kaldırıldı - direkt onboarding veya login göster
 
   // Determine initial route
   const getInitialRouteName = () => {
