@@ -271,22 +271,35 @@ export function AppNavigator() {
     },
   };
 
-  // Loading ekranı kaldırıldı - direkt onboarding veya login göster
-
   // Determine initial route
   const getInitialRouteName = () => {
-    if (showOnboarding) return 'Onboarding';
-    if (!isAuthenticated) return 'Login';
-    return 'MainTabs';
+    const route = showOnboarding ? 'Onboarding' : (!isAuthenticated ? 'Login' : 'MainTabs');
+    console.log('[AppNavigator] Initial route:', route, 'showOnboarding:', showOnboarding, 'isAuthenticated:', isAuthenticated);
+    return route;
   };
+
+  const initialRoute = getInitialRouteName();
+
+  // Debug: Render öncesi kontrol
+  console.log('[AppNavigator] Rendering with:', {
+    showOnboarding,
+    isAuthenticated,
+    initialRoute,
+  });
 
   return (
     <NavigationContainer 
       ref={navigationRef} 
       linking={linking}
-      key={showOnboarding ? 'onboarding' : (!isAuthenticated ? 'auth' : 'main')}>
+      key={showOnboarding ? 'onboarding' : (!isAuthenticated ? 'auth' : 'main')}
+      onReady={() => {
+        console.log('[AppNavigator] NavigationContainer ready');
+      }}
+      onStateChange={(state) => {
+        console.log('[AppNavigator] Navigation state changed:', state?.routes?.[state?.index]?.name);
+      }}>
       <Stack.Navigator
-        initialRouteName={getInitialRouteName()}
+        initialRouteName={initialRoute}
         screenOptions={{
           headerShown: false,
           contentStyle: {backgroundColor: '#0f0c29'},
@@ -295,17 +308,30 @@ export function AppNavigator() {
         
         {/* Onboarding */}
         <Stack.Screen name="Onboarding">
-          {(props) => (
-            <OnboardingScreen
-              {...props}
-              onComplete={async () => {
-                // Onboarding tamamlandı - AsyncStorage'a kaydet
-                await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
-                // State'i güncelle - useEffect navigation'ı yönetecek
-                setShowOnboarding(false);
-              }}
-            />
-          )}
+          {(props) => {
+            console.log('[AppNavigator] Rendering OnboardingScreen');
+            try {
+              return (
+                <OnboardingScreen
+                  {...props}
+                  onComplete={async () => {
+                    console.log('[AppNavigator] Onboarding completed');
+                    // Onboarding tamamlandı - AsyncStorage'a kaydet
+                    await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
+                    // State'i güncelle - useEffect navigation'ı yönetecek
+                    setShowOnboarding(false);
+                  }}
+                />
+              );
+            } catch (error) {
+              console.error('[AppNavigator] Error rendering OnboardingScreen:', error);
+              return (
+                <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
+                  <Text style={{color: '#fff', fontSize: 18}}>Onboarding yüklenirken hata oluştu</Text>
+                </View>
+              );
+            }
+          }}
         </Stack.Screen>
 
         {/* Auth screens */}
