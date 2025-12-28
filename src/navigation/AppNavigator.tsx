@@ -62,9 +62,21 @@ export function AppNavigator() {
   const [showOnboarding, setShowOnboarding] = React.useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check onboarding status
-    checkOnboardingCompleted()
+    // Check onboarding status with timeout
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<boolean>((resolve) => {
+      timeoutId = setTimeout(() => {
+        console.warn('[AppNavigator] Onboarding check timeout, defaulting to show onboarding');
+        resolve(false); // Timeout durumunda onboarding göster
+      }, 3000); // 3 saniye timeout
+    });
+
+    Promise.race([
+      checkOnboardingCompleted(),
+      timeoutPromise,
+    ])
       .then(completed => {
+        clearTimeout(timeoutId);
         if (__DEV__) {
           console.log('[AppNavigator] Onboarding completed:', completed);
         }
@@ -76,6 +88,7 @@ export function AppNavigator() {
         }
       })
       .catch(error => {
+        clearTimeout(timeoutId);
         console.error('[AppNavigator] Failed to check onboarding status:', error);
         // Default to showing onboarding on error
         setShowOnboarding(true);
@@ -235,7 +248,7 @@ export function AppNavigator() {
   if (showOnboarding === null) {
     return (
       <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
-        {/* Loading screen - prevents pink screen */}
+        <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold'}}>MatchTalk</Text>
       </View>
     );
   }
