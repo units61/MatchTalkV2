@@ -167,6 +167,18 @@ export function AppNavigator() {
     }
   }, [setNavigateRef]);
 
+  // Handle onboarding completion - navigate to Login when showOnboarding becomes false
+  useEffect(() => {
+    if (showOnboarding === false && navigationRef.current?.isReady()) {
+      // Onboarding tamamlandı, Login'e git
+      console.log('[AppNavigator] Onboarding completed, navigating to Login');
+      navigationRef.current.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
+    }
+  }, [showOnboarding]);
+
   // Handle deep linking
   useEffect(() => {
     // Get initial URL (if app was opened via deep link)
@@ -262,7 +274,10 @@ export function AppNavigator() {
   };
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer 
+      ref={navigationRef} 
+      linking={linking}
+      key={showOnboarding ? 'onboarding' : (!isAuthenticated ? 'auth' : 'main')}>
       <Stack.Navigator
         initialRouteName={getInitialRouteName()}
         screenOptions={{
@@ -277,17 +292,10 @@ export function AppNavigator() {
             <OnboardingScreen
               {...props}
               onComplete={async () => {
-                // Onboarding tamamlandı
+                // Onboarding tamamlandı - AsyncStorage'a kaydet
                 await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
+                // State'i güncelle - useEffect navigation'ı yönetecek
                 setShowOnboarding(false);
-                
-                // Navigation stack'i reset et ve Login'e git
-                if (navigationRef.current) {
-                  navigationRef.current.reset({
-                    index: 0,
-                    routes: [{name: 'Login'}],
-                  });
-                }
               }}
             />
           )}
