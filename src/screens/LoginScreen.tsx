@@ -156,7 +156,7 @@ export default function LoginScreen() {
 
             <View style={styles.oauthContainer}>
               <TouchableOpacity
-                style={styles.oauthButton}
+                style={[styles.oauthButton, {marginBottom: 12}]}
                 onPress={handleGoogleLogin}
                 activeOpacity={0.7}>
                 <View style={styles.oauthIconContainer}>
@@ -170,7 +170,9 @@ export default function LoginScreen() {
                 onPress={handleAppleLogin}
                 activeOpacity={0.7}>
                 <Ionicons name="logo-apple" size={20} color="#fff" />
-                <Text style={styles.oauthButtonText}>Apple ile Giriş Yap</Text>
+                <View style={{marginLeft: 12}}>
+                  <Text style={styles.oauthButtonText}>Apple ile Giriş Yap</Text>
+                </View>
               </TouchableOpacity>
             </View>
 
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   oauthContainer: {
-    gap: 12,
+    marginTop: 12,
   },
   oauthButton: {
     flexDirection: 'row',
@@ -313,7 +315,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
     borderRadius: 12,
     height: 50,
-    gap: 12,
   },
   oauthIconContainer: {
     width: 20,

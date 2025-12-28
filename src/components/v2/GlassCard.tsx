@@ -1,7 +1,6 @@
 import React from 'react';
 import {View, StyleSheet, ViewStyle} from 'react-native';
 import {BlurView} from 'expo-blur';
-import {cn} from '../../lib/utils-v2';
 
 interface GlassCardProps {
   children: React.ReactNode;
@@ -9,7 +8,7 @@ interface GlassCardProps {
   className?: string;
 }
 
-export function GlassCard({children, style, className}: GlassCardProps) {
+export function GlassCard({children, style}: GlassCardProps) {
   return (
     <BlurView intensity={80} tint="dark" style={[styles.card, style]}>
       <View style={styles.content}>

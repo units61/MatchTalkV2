@@ -7,7 +7,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
-  interpolate,
 } from 'react-native-reanimated';
 import {LinearGradient} from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -36,7 +35,7 @@ const steps = [
     description: 'Moderasyonlu odalar ve güvenli iletişim ortamı',
   },
   {
-    icon: 'sparkles',
+    icon: 'rocket',
     title: 'Hemen Başla',
     description: 'Şimdi kayıt ol ve MatchTalk deneyimini yaşa',
   },
@@ -131,6 +130,7 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
               style={[
                 styles.progressDot,
                 index === currentStep && styles.progressDotActive,
+                index > 0 && {marginLeft: 8},
               ]}
             />
           ))}
@@ -149,7 +149,9 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
           <Text style={styles.nextButtonText}>
             {currentStep === steps.length - 1 ? 'Başla' : 'Devam Et'}
           </Text>
-          <Ionicons name="chevron-forward" size={20} color="white" />
+          <View style={{marginLeft: 8}}>
+            <Ionicons name="chevron-forward" size={20} color="white" />
+          </View>
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -223,8 +225,8 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     flexDirection: 'row',
-    gap: 8,
     marginTop: 32,
+    alignItems: 'center',
   },
   progressDot: {
     width: 8,
@@ -248,7 +250,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 32,
-    gap: 8,
   },
   nextButtonText: {
     color: 'white',
