@@ -72,9 +72,8 @@ export function AppNavigator() {
       try {
         const timeoutPromise = new Promise<boolean>((resolve) => {
           timeoutId = setTimeout(() => {
-            console.warn('[AppNavigator] Onboarding check timeout (500ms), defaulting to show onboarding');
             resolve(false); // Timeout durumunda onboarding göster
-          }, 500); // 500ms timeout - çok hızlı
+          }, 500); // 500ms timeout
         });
 
         const completed = await Promise.race([
@@ -85,7 +84,6 @@ export function AppNavigator() {
         if (!isMounted) return;
         clearTimeout(timeoutId);
         
-        console.log('[AppNavigator] Onboarding check result:', completed);
         setShowOnboarding(!completed);
         
         if (completed) {
