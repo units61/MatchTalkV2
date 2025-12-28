@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gkhnkyhns.matchtalk",
-      "buildNumber": "25",
+      "buildNumber": "26",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "MatchTalk sesli sohbet için mikrofon erişimi gerektirir.",
         "NSCameraUsageDescription": "MatchTalk profil fotoğrafı için kamera erişimi gerektirir.",
