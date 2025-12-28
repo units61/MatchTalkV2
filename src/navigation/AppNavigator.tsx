@@ -240,14 +240,8 @@ export function AppNavigator() {
     },
   };
 
-  // Uygulama verileri kontrol ederken boş ekran kalmasın
-  if (!isReady) {
-    return (
-      <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
-        <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold'}}>MatchTalk</Text>
-      </View>
-    );
-  }
+  // Loading ekranını KALDIR - App.tsx zaten yönetiyor
+  // Direkt navigation'a geç, showOnboarding state'ine göre ekran gösterilecek
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>

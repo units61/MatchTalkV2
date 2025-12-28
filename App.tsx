@@ -17,61 +17,45 @@ export default function App() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Initialize error tracking (Sentry) - wrap in try-catch to prevent crashes
-        try {
-          initErrorTracking({
-            enabled: true,
-            environment: __DEV__ ? 'development' : 'production',
-            service: 'sentry',
-          });
-        } catch (error) {
-          // Silently fail - don't crash the app if error tracking initialization fails
-          if (__DEV__) {
-            console.error('[App] Failed to initialize error tracking:', error);
-          }
-        }
-
-        // Initialize analytics - wrap in try-catch to prevent crashes
-        try {
-          initAnalytics({
-            enabled: true,
-            batchSize: 10,
-            batchInterval: 5000,
-          });
-        } catch (error) {
-          // Silently fail - don't crash the app if analytics initialization fails
-          if (__DEV__) {
-            console.error('[App] Failed to initialize analytics:', error);
-          }
-        }
-
-        // Initialize app state management - wrap in try-catch to prevent crashes
-        try {
-          initAppStateManagement();
-        } catch (error) {
-          // Silently fail - don't crash the app if app state initialization fails
-          if (__DEV__) {
-            console.error('[App] Failed to initialize app state management:', error);
-          }
-        }
-
-        // Initialize performance monitoring - wrap in try-catch to prevent crashes
-        try {
-          initPerformanceMonitoring();
-        } catch (error) {
-          // Silently fail - don't crash the app if performance monitoring initialization fails
-          if (__DEV__) {
-            console.error('[App] Failed to initialize performance monitoring:', error);
-          }
-        }
-
-        // Kısa bir bekleme - native modüllerin hazır olması için
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Init işlemleri - paralel çalışsın, hızlı olsun
+        const initPromises = [
+          Promise.resolve().then(() => {
+            try { 
+              initErrorTracking({ 
+                enabled: true, 
+                environment: __DEV__ ? 'development' : 'production', 
+                service: 'sentry' 
+              }); 
+            } catch {}
+          }),
+          Promise.resolve().then(() => {
+            try { 
+              initAnalytics({ 
+                enabled: true, 
+                batchSize: 10, 
+                batchInterval: 5000 
+              }); 
+            } catch {}
+          }),
+          Promise.resolve().then(() => {
+            try { 
+              initAppStateManagement(); 
+            } catch {}
+          }),
+          Promise.resolve().then(() => {
+            try { 
+              initPerformanceMonitoring(); 
+            } catch {}
+          }),
+        ];
+        
+        // Tüm init işlemlerini paralel çalıştır, max 500ms bekle
+        await Promise.race([
+          Promise.all(initPromises),
+          new Promise(resolve => setTimeout(resolve, 500))
+        ]);
       } catch (e) {
-        // Hata olsa bile uygulamayı başlat
-        if (__DEV__) {
-          console.warn('[App] Error during initialization:', e);
-        }
+        // Hata olsa bile devam et
       } finally {
         setIsReady(true);
       }
@@ -96,13 +80,9 @@ export default function App() {
     }
   };
 
-  // Hazır değilse loading ekranı göster
+  // Loading ekranını kaldır - direkt AppNavigator'a geç (max 500ms bekle)
   if (!isReady) {
-    return (
-      <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
-        <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold'}}>MatchTalk</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
