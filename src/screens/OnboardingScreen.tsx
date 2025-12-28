@@ -43,7 +43,7 @@ const steps = [
 ];
 
 interface OnboardingScreenProps {
-  onComplete?: () => void;
+  onComplete?: () => Promise<void>;
 }
 
 export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {}) {
@@ -57,24 +57,24 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
       setCurrentStep(nextStep);
       translateX.value = withTiming(-width * nextStep, {duration: 300});
     } else {
-      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-      // Callback ile AppNavigator'a bildir
+      // onComplete callback'i çağır (AsyncStorage işlemi callback içinde yapılacak)
       if (onComplete) {
-        onComplete();
+        await onComplete();
       } else {
         // Fallback: direkt navigate et
+        await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
         navigation.navigate('Login' as never);
       }
     }
   };
 
   const handleSkip = async () => {
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-    // Callback ile AppNavigator'a bildir
+    // onComplete callback'i çağır (AsyncStorage işlemi callback içinde yapılacak)
     if (onComplete) {
-      onComplete();
+      await onComplete();
     } else {
       // Fallback: direkt navigate et
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       navigation.navigate('Login' as never);
     }
   };

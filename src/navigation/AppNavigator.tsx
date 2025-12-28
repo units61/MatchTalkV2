@@ -4,6 +4,7 @@ import {NavigationContainer, NavigationContainerRef} from '@react-navigation/nat
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Linking} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useAuthStore} from '../stores/authStore';
 import {useWebSocketStore} from '../stores/websocketStore';
 import NetInfo from '@react-native-community/netinfo';
@@ -253,44 +254,60 @@ export function AppNavigator() {
     );
   }
 
+  // Determine initial route
+  const getInitialRouteName = () => {
+    if (showOnboarding) return 'Onboarding';
+    if (!isAuthenticated) return 'Login';
+    return 'MainTabs';
+  };
+
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
       <Stack.Navigator
+        initialRouteName={getInitialRouteName()}
         screenOptions={{
           headerShown: false,
           contentStyle: {backgroundColor: '#0f0c29'},
         }}>
-        {showOnboarding ? (
-          <Stack.Screen name="Onboarding">
-            {(props) => (
-              <OnboardingScreen
-                {...props}
-                onComplete={() => {
-                  // Onboarding tamamlandı, Login ekranını göster
-                  setShowOnboarding(false);
-                }}
-              />
-            )}
-          </Stack.Screen>
-        ) : !isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="MainTabs" component={MainTabs} />
-            <Stack.Screen name="Room" component={RoomScreen} />
-            <Stack.Screen name="Friends" component={FriendsScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-            <Stack.Screen name="Matching" component={MatchingScreen} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-            <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
-            <Stack.Screen name="Chat" component={ChatScreen} />
-          </>
-        )}
+        {/* Tüm ekranları her zaman stack'e ekle */}
+        
+        {/* Onboarding */}
+        <Stack.Screen name="Onboarding">
+          {(props) => (
+            <OnboardingScreen
+              {...props}
+              onComplete={async () => {
+                // Onboarding tamamlandı
+                await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
+                setShowOnboarding(false);
+                
+                // Navigation stack'i reset et ve Login'e git
+                if (navigationRef.current) {
+                  navigationRef.current.reset({
+                    index: 0,
+                    routes: [{name: 'Login'}],
+                  });
+                }
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        {/* Auth screens */}
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+
+        {/* Authenticated screens */}
+        <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Room" component={RoomScreen} />
+        <Stack.Screen name="Friends" component={FriendsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Matching" component={MatchingScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
