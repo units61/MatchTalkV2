@@ -1,50 +1,27 @@
-import React, {useEffect} from 'react';
+import React from 'react';
+import {View, Text} from 'react-native';
 import {StatusBar} from 'expo-status-bar';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
-import {ErrorBoundary} from './src/components/common/ErrorBoundary';
-import {AppNavigator} from './src/navigation/AppNavigator';
-import {initErrorTracking} from './src/utils/errorTracking';
-import {initAnalytics} from './src/utils/analytics';
-import {initAppStateManagement} from './src/utils/appState';
-import {initPerformanceMonitoring} from './src/utils/performance';
 
 export default function App() {
-  // Init işlemlerini arka planda çalıştır - blocking yapma
-  useEffect(() => {
-    try { 
-      initErrorTracking({ 
-        enabled: true, 
-        environment: __DEV__ ? 'development' : 'production', 
-        service: 'sentry' 
-      }); 
-    } catch {}
-    
-    try { 
-      initAnalytics({ 
-        enabled: true, 
-        batchSize: 10, 
-        batchInterval: 5000 
-      }); 
-    } catch {}
-    
-    try { 
-      initAppStateManagement(); 
-    } catch {}
-    
-    try { 
-      initPerformanceMonitoring(); 
-    } catch {}
-  }, []);
-
-  // Direkt render et - hiçbir bekleme yok
+  // EN BASİT TEST - hiçbir navigation, hiçbir async işlem yok
+  // Eğer bu görünüyorsa sorun navigation'da, görünmüyorsa daha üst seviyede
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <SafeAreaProvider>
-        <ErrorBoundary>
+        <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
           <StatusBar style="light" />
-          <AppNavigator />
-        </ErrorBoundary>
+          <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold', marginBottom: 20}}>
+            MatchTalk
+          </Text>
+          <Text style={{color: '#fff', fontSize: 18, textAlign: 'center', paddingHorizontal: 20}}>
+            Eğer bu görünüyorsa App.tsx çalışıyor
+          </Text>
+          <Text style={{color: '#888', fontSize: 14, marginTop: 10, textAlign: 'center', paddingHorizontal: 20}}>
+            Sorun navigation'da değil, başka bir yerde
+          </Text>
+        </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
