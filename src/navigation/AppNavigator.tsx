@@ -60,53 +60,35 @@ export function AppNavigator() {
   const {connect, disconnect} = useWebSocketStore();
   const {setNavigateRef} = useNavigationStore();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
-  // Başlangıçta true yap - kontrol sonrası güncellenecek
+  const [isReady, setIsReady] = React.useState(false);
   const [showOnboarding, setShowOnboarding] = React.useState<boolean>(true);
 
   useEffect(() => {
-    // Check onboarding status with timeout
-    let timeoutId: NodeJS.Timeout;
-    let isMounted = true;
-    
-    const checkOnboarding = async () => {
+    const init = async () => {
       try {
+        // 1. Onboarding kontrolü - timeout ile güvenlik
+        const onboardingPromise = checkOnboardingCompleted();
         const timeoutPromise = new Promise<boolean>((resolve) => {
-          timeoutId = setTimeout(() => {
-            resolve(false); // Timeout durumunda onboarding göster
-          }, 500); // 500ms timeout
+          setTimeout(() => resolve(false), 2000); // 2 saniye timeout
         });
-
-        const completed = await Promise.race([
-          checkOnboardingCompleted(),
-          timeoutPromise,
-        ]);
-
-        if (!isMounted) return;
-        clearTimeout(timeoutId);
         
+        const completed = await Promise.race([onboardingPromise, timeoutPromise]);
         setShowOnboarding(!completed);
         
+        // 2. Eğer onboarding tamamsa kullanıcıyı yükle
         if (completed) {
-          loadUser().catch(error => {
-            console.error('[AppNavigator] Failed to load user:', error);
-          });
+          await loadUser();
         }
-      } catch (error) {
-        if (!isMounted) return;
-        clearTimeout(timeoutId);
-        console.error('[AppNavigator] Failed to check onboarding status:', error);
-        // Default to showing onboarding on error
+      } catch (e) {
+        // Hata olsa bile onboarding göster
         setShowOnboarding(true);
+      } finally {
+        // 3. Her durumda uygulamayı "hazır" hale getir ki ekran açılsın
+        setIsReady(true);
       }
     };
-
-    checkOnboarding();
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, []);
+    init();
+  }, [loadUser]);
 
   useEffect(() => {
     // Setup network status listener
@@ -179,17 +161,6 @@ export function AppNavigator() {
     }
   }, [setNavigateRef]);
 
-  // Handle onboarding completion - navigate to Login when showOnboarding becomes false
-  useEffect(() => {
-    if (showOnboarding === false && navigationRef.current?.isReady()) {
-      // Onboarding tamamlandı, Login'e git
-      console.log('[AppNavigator] Onboarding completed, navigating to Login');
-      navigationRef.current.reset({
-        index: 0,
-        routes: [{name: 'Login'}],
-      });
-    }
-  }, [showOnboarding]);
 
   // Handle deep linking
   useEffect(() => {
@@ -269,56 +240,56 @@ export function AppNavigator() {
     },
   };
 
-  // Determine initial route
-  const getInitialRouteName = () => {
-    if (showOnboarding) return 'Onboarding';
-    if (!isAuthenticated) return 'Login';
-    return 'MainTabs';
-  };
+  // Uygulama verileri kontrol ederken boş ekran kalmasın
+  if (!isReady) {
+    return (
+      <View style={{flex: 1, backgroundColor: '#0f0c29', justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{color: '#06b6d4', fontSize: 32, fontWeight: 'bold'}}>MatchTalk</Text>
+      </View>
+    );
+  }
 
   return (
-    <NavigationContainer 
-      ref={navigationRef} 
-      linking={linking}
-      key={showOnboarding ? 'onboarding' : (!isAuthenticated ? 'auth' : 'main')}>
-      <Stack.Navigator
-        initialRouteName={getInitialRouteName()}
-        screenOptions={{
-          headerShown: false,
-          contentStyle: {backgroundColor: '#0f0c29'},
+    <NavigationContainer ref={navigationRef} linking={linking}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false, 
+          contentStyle: {backgroundColor: '#0f0c29'} 
         }}>
-        {/* Tüm ekranları her zaman stack'e ekle */}
-        
-        {/* Onboarding */}
-        <Stack.Screen name="Onboarding">
-          {(props) => (
-            <OnboardingScreen
-              {...props}
-              onComplete={async () => {
-                // Onboarding tamamlandı - AsyncStorage'a kaydet
-                await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
-                // State'i güncelle - useEffect navigation'ı yönetecek
-                setShowOnboarding(false);
-              }}
-            />
-          )}
-        </Stack.Screen>
-
-        {/* Auth screens */}
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-
-        {/* Authenticated screens */}
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Screen name="Room" component={RoomScreen} />
-        <Stack.Screen name="Friends" component={FriendsScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Matching" component={MatchingScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-        <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        {showOnboarding ? (
+          // DURUM A: Onboarding tamamlanmamışsa SADECE Onboarding göster
+          <Stack.Screen name="Onboarding">
+            {(props) => (
+              <OnboardingScreen
+                {...props}
+                onComplete={async () => {
+                  await AsyncStorage.setItem('@matchtalk_onboarding_completed', 'true');
+                  setShowOnboarding(false);
+                }}
+              />
+            )}
+          </Stack.Screen>
+        ) : !isAuthenticated ? (
+          // DURUM B: Onboarding tamam ama giriş yapılmamışsa Auth ekranlarını göster
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          </>
+        ) : (
+          // DURUM C: Giriş yapılmışsa Ana Uygulamayı göster
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabs} />
+            <Stack.Screen name="Room" component={RoomScreen} />
+            <Stack.Screen name="Friends" component={FriendsScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
+            <Stack.Screen name="Matching" component={MatchingScreen} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+            <Stack.Screen name="ChangeEmail" component={ChangeEmailScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
