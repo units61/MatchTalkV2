@@ -47,13 +47,16 @@ try {
   }
 }
 
-// 🚨 CRITICAL: Override React Native's ExceptionsManager
+// 🚨 CRITICAL: Override React Native's ExceptionsManager COMPLETELY
 // This prevents crashes from com.facebook.react.ExceptionsManagerQueue
+// Native tarafında çalıştığı için JavaScript override yeterli değil
+// Bu yüzden hem JavaScript hem de native bridge'i override ediyoruz
+
+// 1. JavaScript bridge override
 if (global.__fbBatchedBridge) {
   try {
-    // Override reportException if it exists
-    const originalReportException = global.__fbBatchedBridge.reportException;
-    if (originalReportException && typeof originalReportException === 'function') {
+    // reportException'ı tamamen devre dışı bırak
+    if (global.__fbBatchedBridge.reportException) {
       global.__fbBatchedBridge.reportException = function(error, isFatal) {
         try {
           // Sentry'ye gönder
@@ -64,6 +67,7 @@ if (global.__fbBatchedBridge) {
                 source: 'reactNativeExceptionsManager',
                 isFatal: String(isFatal),
                 queue: 'ExceptionsManagerQueue',
+                bypassed: 'true',
               },
               extra: {
                 errorMessage: error instanceof Error ? error.message : String(error),
@@ -75,9 +79,55 @@ if (global.__fbBatchedBridge) {
           // Sentry hatası olsa bile devam et
         }
         // Original handler'ı çağırma - crash etme
-        // return originalReportException.call(this, error, isFatal);
+        return;
       };
     }
+    
+    // reportFatalError'ı da override et
+    if (global.__fbBatchedBridge.reportFatalError) {
+      global.__fbBatchedBridge.reportFatalError = function(error) {
+        try {
+          if (sentryInitialized) {
+            Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+              level: 'fatal',
+              tags: {
+                source: 'reactNativeFatalError',
+                bypassed: 'true',
+              },
+            });
+          }
+        } catch (e) {}
+        return;
+      };
+    }
+  } catch (e) {
+    // Override hatası olsa bile devam et
+  }
+}
+
+// 2. Native Modules exception handling'i override et
+if (global.nativeCallSyncHook) {
+  try {
+    const originalNativeCallSyncHook = global.nativeCallSyncHook;
+    global.nativeCallSyncHook = function(module, method, args) {
+      try {
+        return originalNativeCallSyncHook.call(this, module, method, args);
+      } catch (error) {
+        // Native call hatası - Sentry'ye gönder ama crash etme
+        if (sentryInitialized) {
+          Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+            level: 'error',
+            tags: {
+              source: 'nativeCallSyncHook',
+              module: String(module),
+              method: String(method),
+            },
+          });
+        }
+        // Exception'ı yeniden fırlatma - crash etme
+        return null;
+      }
+    };
   } catch (e) {
     // Override hatası olsa bile devam et
   }
@@ -139,7 +189,8 @@ if (global.ErrorUtils) {
   };
 }
 
-// Global error handler - Tüm hataları Sentry'ye gönder, crash etme
+// 🚨 CRITICAL: Global error handler - Tüm hataları Sentry'ye gönder, crash etme
+// React Native'in exception handling'ini tamamen bypass et
 const originalHandler = ErrorUtils.getGlobalHandler();
 ErrorUtils.setGlobalHandler((error, isFatal) => {
   try {
@@ -150,6 +201,7 @@ ErrorUtils.setGlobalHandler((error, isFatal) => {
         tags: {
           source: 'globalErrorHandler',
           isFatal: String(isFatal),
+          bypassed: 'true',
         },
         extra: {
           errorMessage: error instanceof Error ? error.message : String(error),
@@ -164,9 +216,36 @@ ErrorUtils.setGlobalHandler((error, isFatal) => {
     }
   }
   
-  // Original handler'ı çağırma - hiçbir crash mekanizmasını çalıştırma
+  // 🚨 CRITICAL: Original handler'ı çağırma - hiçbir crash mekanizmasını çalıştırma
+  // React Native'in ExceptionsManagerQueue'suna gitmesini engelle
   // Sadece Sentry'ye gönder, crash etme
 });
+
+// 🚨 CRITICAL: Promise rejection'ları da yakala
+if (global.Promise) {
+  const originalPromiseRejectionTracker = global.Promise;
+  // Unhandled promise rejection'ları yakala
+  if (typeof global.addEventListener === 'function') {
+    global.addEventListener('unhandledrejection', (event) => {
+      try {
+        if (sentryInitialized) {
+          Sentry.captureException(
+            event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+            {
+              level: 'error',
+              tags: {
+                source: 'unhandledPromiseRejection',
+                bypassed: 'true',
+              },
+            }
+          );
+        }
+      } catch (e) {}
+      // Event'i prevent et - crash etme
+      event.preventDefault();
+    });
+  }
+}
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
