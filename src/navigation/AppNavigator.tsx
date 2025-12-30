@@ -47,7 +47,7 @@ function MainTabs() {
 export function AppNavigator() {
   return (
     <Stack.Navigator
-      initialRouteName="Boot"
+      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
         animation: 'fade', // iOS stable animation
