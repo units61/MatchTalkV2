@@ -247,6 +247,20 @@ if (global.Promise) {
   }
 }
 
+// 🚨 CRITICAL: Native exception handling'i aktif et
+// iOS native tarafında exception handling override'ı
+try {
+  // Native module'ü çağır (eğer mevcut ise)
+  if (global.NativeModules && global.NativeModules.ExceptionsManagerFix) {
+    global.NativeModules.ExceptionsManagerFix.setup();
+  }
+} catch (e) {
+  // Native module yoksa devam et
+  if (__DEV__) {
+    console.log('[Native Exception Handling] Not available in this build');
+  }
+}
+
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
 // the environment is set up appropriately
