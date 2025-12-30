@@ -31,7 +31,8 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          display: 'none',
+          height: 0,
+          position: 'absolute',
         },
       }}>
       <Tab.Screen name="Home" component={HomeScreen} />

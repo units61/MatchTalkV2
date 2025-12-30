@@ -56,26 +56,24 @@ workflows:
             --config Release
       - name: Upload Sentry Source Maps
         script: |
-          if [ -n "$SENTRY_AUTH_TOKEN" ]; then
-            VERSION=$(cat package.json | grep '"version"' | head -1 | awk -F: '{ print $2 }' | sed 's/[", ]//g')
-            echo "Uploading source maps for version $VERSION"
-            # .sentryclirc dosyasını oluştur (Sentry CLI otomatik okuyacak)
-            cat > .sentryclirc << EOF
-          [auth]
-          token=$SENTRY_AUTH_TOKEN
-          
-          [defaults]
-          org=matchtalk
-          project=matchtalk-ios
-          EOF
-            # Sentry CLI .sentryclirc dosyasını otomatik okuyacak
-            npx @sentry/cli releases new "$VERSION" || true
-            npx @sentry/cli releases files "$VERSION" upload-sourcemaps ios/build/Build/Products/Release-iphoneos/MatchTalk.app || true
-            npx @sentry/cli releases finalize "$VERSION" || true
-            echo "Source maps upload completed"
-          else
-            echo "SENTRY_AUTH_TOKEN not set, skipping source maps upload"
-          fi
+          export SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+          export SENTRY_ORG=matchtalk
+          export SENTRY_PROJECT=matchtalk-ios
+          export SENTRY_URL=https://matchtalk.sentry.io/
+          export SENTRY_LOG_LEVEL=info
+
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Uploading source maps for version $VERSION"
+
+          npx @sentry/cli info
+
+          npx @sentry/cli releases new "$VERSION"
+          npx @sentry/cli releases files "$VERSION" upload-sourcemaps \
+            ios/build/Build/Products/Release-iphoneos/MatchTalk.app \
+            --rewrite
+          npx @sentry/cli releases finalize "$VERSION"
+
+          echo "Sentry source maps upload completed"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:

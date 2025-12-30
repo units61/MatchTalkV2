@@ -15,6 +15,8 @@ export default function BootScreen() {
     const { loadUser, isAuthenticated } = useAuthStore();
 
     useEffect(() => {
+        let mounted = true;
+
         const init = async () => {
             try {
                 // 🔥 iOS frame guarantee - First frame must be empty
@@ -46,21 +48,25 @@ export default function BootScreen() {
                     await loadUser().catch(() => { });
                 }
 
-                // 3. Final navigation with a small stabilization delay
-                setTimeout(() => {
-                    let targetRoute = 'Onboarding';
-                    if (onboardingCompleted === 'true') {
-                        targetRoute = isAuthenticated ? 'MainTabs' : 'Login';
-                    }
+                // 3. iOS native stack stabilize - MUTLAKA 100ms (PROD tecrübe)
+                await new Promise(r => setTimeout(r, 100));
 
-                    navigation.dispatch(
-                        CommonActions.reset({
-                            index: 0,
-                            routes: [{ name: targetRoute }],
-                        })
-                    );
-                }, 50);
+                if (!mounted) return;
+
+                // 4. Final navigation
+                let targetRoute = 'Onboarding';
+                if (onboardingCompleted === 'true') {
+                    targetRoute = isAuthenticated ? 'MainTabs' : 'Login';
+                }
+
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: targetRoute }],
+                    })
+                );
             } catch (error) {
+                if (!mounted) return;
                 console.error('[BootScreen] Init error:', error);
                 navigation.dispatch(
                     CommonActions.reset({
@@ -72,6 +78,10 @@ export default function BootScreen() {
         };
 
         init();
+
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     return <View style={styles.container} />;
