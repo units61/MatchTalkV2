@@ -105,7 +105,7 @@ export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): 
 export function captureException(
   error: Error,
   context?: ErrorContext,
-  severity: ErrorSeverity = 'error'
+  severity: ErrorSeverity = 'high'
 ): void {
   if (!trackingConfig.enabled) {
     if (__DEV__) {
@@ -160,7 +160,7 @@ export function captureException(
  */
 export function captureMessage(
   message: string,
-  severity: ErrorSeverity = 'info',
+  severity: ErrorSeverity = 'low',
   context?: ErrorContext
 ): void {
   if (!trackingConfig.enabled) {

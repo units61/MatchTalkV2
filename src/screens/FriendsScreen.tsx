@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,17 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
-import Animated, {FadeInDown} from 'react-native-reanimated';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {BottomNav} from '../components/v2/BottomNav';
-import {LoadingSpinner} from '../components/v2/LoadingSpinner';
-import {useFriendsStore} from '../stores/friendsStore';
-import {generateAvatarFromSeed} from '../utils/avatarUtils';
-import {toast} from '../stores/toastStore';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { BottomNav } from '../components/v2/BottomNav';
+import { LoadingSpinner } from '../components/v2/LoadingSpinner';
+import { useFriendsStore } from '../stores/friendsStore';
+import { generateAvatarFromSeed } from '../utils/avatarUtils';
+import { toast } from '../stores/toastStore';
 
 type TabType = 'friends' | 'requests' | 'suggestions';
 
@@ -187,7 +187,7 @@ export default function FriendsScreen() {
                           </View>
                           <TouchableOpacity
                             style={styles.messageButton}
-                            onPress={() => navigation.navigate('Chat' as never, {userId: friend.id} as never)}>
+                            onPress={() => (navigation as any).navigate('Chat', { userId: friend.id })}>
                             <Ionicons name="chatbubble" size={20} color="#22d3ee" />
                           </TouchableOpacity>
                         </View>

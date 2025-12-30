@@ -114,15 +114,15 @@ export default function HomeScreen() {
       if (room) {
         toast.success('Oda bulundu! Katılıyorsunuz...');
         setTimeout(() => {
-          navigation.navigate('Room' as any, { roomId: room.id } as any);
+          (navigation as any).navigate('Room', { roomId: room.id });
         }, 500);
       } else {
         toast.info('Uygun oda bulunamadı. Aktif odaları görüntülüyorsunuz...');
-        navigation.navigate('Rooms' as any);
+        (navigation as any).navigate('Rooms');
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Bir hata oluştu');
-      navigation.navigate('Rooms' as any);
+      (navigation as any).navigate('Rooms');
     } finally {
       setIsSearching(false);
     }
@@ -348,7 +348,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     top: -8,
     left: '50%',
-    transformOrigin: 'center 152px',
   },
   innerRing: {
     position: 'absolute',
@@ -366,7 +365,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     top: -6,
     left: '50%',
-    transformOrigin: 'center 120px',
   },
   micButton: {
     width: 160,

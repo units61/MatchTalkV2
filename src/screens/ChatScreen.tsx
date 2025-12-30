@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,24 +9,24 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import {useRoute, useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
-import Animated, {FadeInDown} from 'react-native-reanimated';
-import {LinearGradient} from 'expo-linear-gradient';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {LoadingSpinner} from '../components/v2/LoadingSpinner';
-import {useAuthStore} from '../stores/authStore';
-import {privateMessagesApi, PrivateMessage} from '../services/api/privateMessagesApi';
-import {generateAvatarFromSeed} from '../utils/avatarUtils';
-import {toast} from '../stores/toastStore';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { LoadingSpinner } from '../components/v2/LoadingSpinner';
+import { useAuthStore } from '../stores/authStore';
+import { privateMessagesApi, PrivateMessage } from '../services/api/privateMessagesApi';
+import { generateAvatarFromSeed } from '../utils/avatarUtils';
+import { toast } from '../stores/toastStore';
 
 export default function ChatScreen() {
   const route = useRoute();
   const navigation = useNavigation();
-  const {userId} = route.params as {userId: string};
-  const {user} = useAuthStore();
+  const { userId } = route.params as { userId: string };
+  const { user } = useAuthStore();
   const [messages, setMessages] = useState<PrivateMessage[]>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,7 +40,7 @@ export default function ChatScreen() {
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({animated: true});
+        scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
   }, [messages]);
@@ -151,9 +151,9 @@ export default function ChatScreen() {
                       style={[
                         styles.messageBubble,
                         isCurrentUser ? styles.messageBubbleRight : styles.messageBubbleLeft,
-                      ]}>
+                      ] as any}>
                       <Text style={styles.messageText}>{msg.content}</Text>
-                      <Text style={styles.messageTime}>{formatTime(msg.createdAt)}</Text>
+                      <Text style={styles.messageTime}>{formatTime(msg.createdAt as any)}</Text>
                     </GlassCard>
                   </View>
                 );

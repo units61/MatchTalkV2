@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,18 +8,18 @@ import {
   TextInput,
   Image,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
-import Animated, {FadeInDown} from 'react-native-reanimated';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {BottomNav} from '../components/v2/BottomNav';
-import {LoadingSpinner} from '../components/v2/LoadingSpinner';
-import {useAuthStore} from '../stores/authStore';
-import {privateMessagesApi} from '../services/api/privateMessagesApi';
-import {generateAvatarFromSeed} from '../utils/avatarUtils';
-import {toast} from '../stores/toastStore';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { BottomNav } from '../components/v2/BottomNav';
+import { LoadingSpinner } from '../components/v2/LoadingSpinner';
+import { useAuthStore } from '../stores/authStore';
+import { privateMessagesApi } from '../services/api/privateMessagesApi';
+import { generateAvatarFromSeed } from '../utils/avatarUtils';
+import { toast } from '../stores/toastStore';
 
 interface Conversation {
   id: string;
@@ -35,7 +35,7 @@ interface Conversation {
 
 export default function MessagesScreen() {
   const navigation = useNavigation();
-  const {user} = useAuthStore();
+  const { user } = useAuthStore();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,7 +48,7 @@ export default function MessagesScreen() {
     try {
       setLoading(true);
       const data = await privateMessagesApi.getConversations();
-      setConversations(data);
+      setConversations(data as any);
     } catch (error) {
       console.error('Konuşmalar yüklenemedi:', error);
       toast.error('Mesajlar yüklenirken bir hata oluştu.');
@@ -73,12 +73,12 @@ export default function MessagesScreen() {
     if (minutes < 60) return `${minutes}dk`;
     if (hours < 24) return `${hours}sa`;
     if (days < 7) return `${days}g`;
-    return date.toLocaleDateString('tr-TR', {day: 'numeric', month: 'short'});
+    return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
   };
 
   const handleConversationPress = (userId: string) => {
     // Navigate to chat screen
-    navigation.navigate('Chat' as never, {userId} as never);
+    (navigation as any).navigate('Chat', { userId });
   };
 
   return (
@@ -148,7 +148,7 @@ export default function MessagesScreen() {
                             <View
                               style={[
                                 styles.avatar,
-                                {backgroundColor: avatar.gradient.from},
+                                { backgroundColor: avatar.gradient.from },
                               ]}>
                               <Text style={styles.avatarText}>
                                 {conv.userName.charAt(0).toUpperCase()}

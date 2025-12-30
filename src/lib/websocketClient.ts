@@ -1,9 +1,9 @@
-import {io, Socket} from 'socket.io-client';
-import {apiClient} from './apiClient';
-import {config} from './config';
-import {WEBSOCKET_CONFIG} from '../constants/app';
-import {captureException, addBreadcrumb} from '../utils/errorTracking';
-import {trackEvent} from '../utils/analytics';
+import { io, Socket } from 'socket.io-client';
+import { apiClient } from './apiClient';
+import { config } from './config';
+import { WEBSOCKET_CONFIG } from '../constants/app';
+import { captureException, addBreadcrumb } from '../utils/errorTracking';
+import { trackEvent } from '../utils/analytics';
 
 class WebSocketClient {
   private socket: Socket | null = null;
@@ -51,7 +51,7 @@ class WebSocketClient {
     return new Promise((resolve, reject) => {
       let resolved = false;
       const timeoutMs = WEBSOCKET_CONFIG.CONNECTION_TIMEOUT;
-      
+
       // Periyodik olarak socket'in connected durumunu kontrol et
       const connectionCheckInterval = setInterval(() => {
         if (this.socket?.connected && !resolved) {
@@ -68,7 +68,7 @@ class WebSocketClient {
           resolve(this.socket);
         }
       }, 100); // Her 100ms'de bir kontrol et
-      
+
       const timeout = setTimeout(() => {
         if (!resolved) {
           // Timeout öncesi son bir kontrol yap
@@ -86,7 +86,7 @@ class WebSocketClient {
             resolve(this.socket);
             return;
           }
-          
+
           // Gerçekten timeout
           resolved = true;
           clearInterval(connectionCheckInterval);
@@ -99,13 +99,13 @@ class WebSocketClient {
             connected: this.socket?.connected,
             transport: this.socket?.io?.engine?.transport?.name,
           });
-          
+
           // Backend health check önerisi
           console.warn(`[WebSocket] Backend sunucusunun çalıştığını kontrol edin:`);
           console.warn(`[WebSocket] 1. Backend sunucusu çalışıyor mu? (http://localhost:4000)`);
           console.warn(`[WebSocket] 2. Redis çalışıyor mu? (WebSocket için gerekli)`);
           console.warn(`[WebSocket] 3. CORS ayarları doğru mu?`);
-          
+
           // Clean up listeners
           if (this.socket) {
             this.socket.off('connect', connectHandler);
@@ -147,7 +147,7 @@ class WebSocketClient {
           clearTimeout(timeout);
           console.log('[WebSocket] Connected successfully');
           this.reconnectAttempts = 0;
-          
+
           // Track connection quality (connection time)
           const connectionTime = Date.now() - (this.socket as any)?._connectionStartTime || 0;
           trackEvent('websocket_connection_quality', {
@@ -157,7 +157,7 @@ class WebSocketClient {
           }).catch(() => {
             // Ignore errors
           });
-          
+
           if (this.socket) {
             this.socket.off('connect', connectHandler);
             this.socket.off('connect_error', errorHandler);
@@ -214,7 +214,7 @@ class WebSocketClient {
             this.socket.off('connect', connectHandler);
             this.socket.off('connect_error', errorHandler);
           }
-          
+
           // Daha açıklayıcı hata mesajları
           let userFriendlyMessage = 'WebSocket bağlantı hatası';
           if (errorMessage.includes('Authentication') || errorMessage.includes('token')) {
@@ -224,7 +224,7 @@ class WebSocketClient {
           } else {
             userFriendlyMessage = `WebSocket bağlantı hatası: ${errorMessage}`;
           }
-          
+
           reject(new Error(userFriendlyMessage));
         }
       };
@@ -244,12 +244,12 @@ class WebSocketClient {
 
       this.socket!.on('connect', connectHandler);
       this.socket!.on('connect_error', errorHandler);
-      
+
       // Additional debugging events
       this.socket!.on('disconnect', (reason) => {
         console.log('[WebSocket] Disconnected during connection attempt:', reason);
       });
-      
+
       this.socket!.on('reconnect_attempt', (attemptNumber) => {
         console.log(`[WebSocket] Reconnection attempt ${attemptNumber} during initial connection`);
       });
@@ -266,7 +266,7 @@ class WebSocketClient {
       this.socket!.on('reconnect_attempt', (attemptNumber) => {
         console.log(`[WebSocket] Reconnection attempt ${attemptNumber}`);
         this.reconnectAttempts = attemptNumber;
-        
+
         // Track reconnection attempt
         trackEvent('websocket_reconnect_attempt', {
           attemptNumber,
@@ -280,7 +280,7 @@ class WebSocketClient {
         console.log(`[WebSocket] Reconnected after ${attemptNumber} attempts`);
         this.reconnectAttempts = 0;
         this.reconnectDelay = WEBSOCKET_CONFIG.RECONNECT_DELAY; // Reset delay on successful reconnect
-        
+
         // Track successful reconnection
         trackEvent('websocket_reconnect_success', {
           attemptNumber,
@@ -292,7 +292,7 @@ class WebSocketClient {
 
       this.socket!.on('reconnect_failed', () => {
         console.error('[WebSocket] Reconnection failed after all attempts');
-        
+
         // Track reconnection failure
         trackEvent('websocket_reconnect_failed', {
           maxAttempts: this.maxReconnectAttempts,
@@ -300,7 +300,7 @@ class WebSocketClient {
         }).catch(() => {
           // Ignore errors
         });
-        
+
         // Send to Sentry
         captureException(
           new Error('WebSocket reconnection failed after all attempts'),
@@ -401,12 +401,12 @@ class WebSocketClient {
           return; // Sessizce çık, hata fırlatma
         }
       }
-      
+
       if (!this.socket) {
         console.warn('[WebSocket] Socket instance is null, skipping joinRoom');
         return; // Sessizce çık, hata fırlatma
       }
-      
+
       if (!this.socket.connected) {
         // Try one more time to check connection status
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -415,20 +415,19 @@ class WebSocketClient {
           return; // Sessizce çık, hata fırlatma
         }
       }
-      
+
       console.log(`[WebSocket] Joining room: ${roomId}`);
-      this.socket.emit('join-room', {roomId});
+      this.socket.emit('join-room', { roomId });
       console.log(`[WebSocket] Join room event emitted for: ${roomId}`);
 
       // Track WebSocket join room
-      const {trackEvent} = await import('../utils/analytics');
       trackEvent('websocket_join_room', {
         roomId,
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`[WebSocket] Error in joinRoom for ${roomId}:`, errorMessage);
-      
+
       // Send to Sentry
       captureException(
         error instanceof Error ? error : new Error(errorMessage),
@@ -453,10 +452,9 @@ class WebSocketClient {
     if (!this.socket || !this.socket.connected) {
       return; // Already disconnected, no need to emit
     }
-    this.socket.emit('leave-room', {roomId});
+    this.socket.emit('leave-room', { roomId });
 
     // Track WebSocket leave room
-    const {trackEvent} = await import('../utils/analytics');
     trackEvent('websocket_leave_room', {
       roomId,
     });
@@ -469,7 +467,7 @@ class WebSocketClient {
     if (!this.socket || !this.socket.connected) {
       throw new Error('Socket not connected');
     }
-    this.socket.emit('vote-extension', {roomId, vote});
+    this.socket.emit('vote-extension', { roomId, vote });
   }
 
   // Matching events
@@ -483,7 +481,6 @@ class WebSocketClient {
     this.socket.emit('matching-join');
 
     // Track WebSocket join matching
-    const {trackEvent} = await import('../utils/analytics');
     trackEvent('websocket_join_matching', {});
   }
 
@@ -494,7 +491,6 @@ class WebSocketClient {
     this.socket.emit('matching-leave');
 
     // Track WebSocket leave matching
-    const {trackEvent} = await import('../utils/analytics');
     trackEvent('websocket_leave_matching', {});
   }
 

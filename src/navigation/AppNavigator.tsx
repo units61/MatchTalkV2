@@ -22,8 +22,8 @@ import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import ChangeEmailScreen from '../screens/ChangeEmailScreen';
 import ChatScreen from '../screens/ChatScreen';
 
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator() as any;
+const Tab = createBottomTabNavigator() as any;
 
 function MainTabs() {
   return (

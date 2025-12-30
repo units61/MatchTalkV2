@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState, useRef} from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,16 +9,16 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {BottomNav} from '../components/v2/BottomNav';
-import {useRoomsStore} from '../stores/roomsStore';
-import {toast} from '../stores/toastStore';
-import {websocketClient} from '../lib/websocketClient';
-import {useWebSocketEventStore} from '../stores/websocketEventStore';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { BottomNav } from '../components/v2/BottomNav';
+import { useRoomsStore } from '../stores/roomsStore';
+import { toast } from '../stores/toastStore';
+import { websocketClient } from '../lib/websocketClient';
+import { useWebSocketEventStore } from '../stores/websocketEventStore';
 
 const categories = ['Tümü', 'genel', 'hızlı-tanışma', 'oyun', 'eğlence', 'derin-sohbet', 'gece'];
 
@@ -31,7 +31,7 @@ function formatTime(totalSeconds: number) {
 
 export default function RoomsScreen() {
   const navigation = useNavigation();
-  const {rooms, fetchRooms, creating} = useRoomsStore();
+  const { rooms, fetchRooms, creating } = useRoomsStore();
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
@@ -39,7 +39,7 @@ export default function RoomsScreen() {
   const [maxParticipants, setMaxParticipants] = useState(8);
   const [durationSec, setDurationSec] = useState(300);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const {subscribe, unsubscribe} = useWebSocketEventStore();
+  const { subscribe, unsubscribe } = useWebSocketEventStore();
 
   // İlk yükleme ve periyodik güncelleme
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function RoomsScreen() {
   );
 
   const handleRoomClick = (roomId: string) => {
-    navigation.navigate('Room' as never, {roomId} as never);
+    (navigation as any).navigate('Room', { roomId });
   };
 
   const handleCreateRoom = async () => {
@@ -123,7 +123,7 @@ export default function RoomsScreen() {
       setShowCreateModal(false);
       setNewRoomName('');
 
-      navigation.navigate('Room' as never, {roomId: room.id} as never);
+      (navigation as any).navigate('Room', { roomId: room.id });
     } catch (error) {
       console.error('Oda oluşturulamadı:', error);
       toast.error(
@@ -234,7 +234,7 @@ export default function RoomsScreen() {
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => !creating && setShowCreateModal(false)}>
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+          <TouchableOpacity activeOpacity={1} onPress={() => { }}>
             <GlassCard style={styles.modalContent}>
               <Text style={styles.modalTitle}>Yeni Oda Oluştur</Text>
 

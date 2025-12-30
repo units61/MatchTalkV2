@@ -76,7 +76,7 @@ export function AnimatedBackground() {
       { translateX: orb1X.value },
       { translateY: orb1Y.value },
       { scale: orb1Scale.value },
-    ],
+    ] as any,
   }));
 
   const orb2Style = useAnimatedStyle(() => ({
@@ -84,7 +84,7 @@ export function AnimatedBackground() {
       { translateX: orb2X.value },
       { translateY: orb2Y.value },
       { scale: orb2Scale.value },
-    ],
+    ] as any,
   }));
 
   return (
@@ -141,7 +141,7 @@ function FloatingParticle({ index }: { index: number }) {
 
   const particleStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }] as any,
     left: left.value,
     top: top.value,
   }));

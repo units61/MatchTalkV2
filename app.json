@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gkhnkyhns.matchtalk",
-      "buildNumber": "29",
+      "buildNumber": "30",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "MatchTalk sesli sohbet için mikrofon erişimi gerektirir.",
         "NSCameraUsageDescription": "MatchTalk profil fotoğrafı için kamera erişimi gerektirir.",
@@ -43,7 +43,8 @@
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "@sentry/react-native"
     ],
     "extra": {
       "eas": {

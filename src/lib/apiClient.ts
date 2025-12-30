@@ -1,10 +1,10 @@
-import axios, {AxiosInstance, AxiosError, InternalAxiosRequestConfig, CancelTokenSource} from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, CancelTokenSource } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {config} from './config';
-import {handleError, createErrorHandler} from '../utils/errorHandler';
-import {captureException, addBreadcrumb} from '../utils/errorTracking';
-import {trackEvent} from '../utils/analytics';
-import {API_CONFIG} from '../constants/app';
+import { config } from './config';
+import { handleError, createErrorHandler } from '../utils/errorHandler';
+import { captureException, addBreadcrumb } from '../utils/errorTracking';
+import { trackEvent } from '../utils/analytics';
+import { API_CONFIG } from '../constants/app';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -26,7 +26,7 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
     if (error.response?.status === 429) {
       return false;
     }
-    
+
     // Retry on network errors or 5xx server errors
     return (
       !error.response ||
@@ -45,7 +45,7 @@ const cancelTokens = new Map<string, CancelTokenSource>();
 
 class ApiClient {
   private client: AxiosInstance;
-  private errorHandler = createErrorHandler({component: 'ApiClient'});
+  private errorHandler = createErrorHandler({ component: 'ApiClient' });
 
   constructor() {
     this.client = axios.create({
@@ -102,7 +102,7 @@ class ApiClient {
       return await requestFn();
     } catch (error) {
       const axiosError = error as AxiosError;
-      
+
       // Check if we should retry
       if (
         attempt <= retryConfig.retries &&
@@ -110,14 +110,14 @@ class ApiClient {
       ) {
         // Calculate delay with exponential backoff
         const delay = retryConfig.retryDelay * Math.pow(2, attempt - 1);
-        
+
         // Wait before retrying
         await new Promise((resolve) => setTimeout(resolve, delay));
-        
+
         // Retry
         return this.retryRequest(requestFn, retryConfig, attempt + 1);
       }
-      
+
       // No more retries, throw error
       throw error;
     }
@@ -178,7 +178,7 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => {
         const config = response.config as InternalAxiosRequestConfig & {
-          metadata?: {startTime: number};
+          metadata?: { startTime: number };
           requestId?: string;
         };
         const duration = config.metadata
@@ -212,7 +212,7 @@ class ApiClient {
       },
       async (error: AxiosError) => {
         const config = error.config as InternalAxiosRequestConfig & {
-          metadata?: {startTime: number};
+          metadata?: { startTime: number };
           requestId?: string;
         };
         const duration = config?.metadata
@@ -255,29 +255,30 @@ class ApiClient {
               status >= 500 ? 'high' : 'medium'
             );
           }
-          
+
           if (status === 401) {
             // Unauthorized - Try to refresh token first
             const token = await AsyncStorage.getItem('auth_token');
             const originalRequest = error.config;
-            
+
             // Refresh endpoint'ine yapılan istekse, refresh yapma (sonsuz döngüyü önle)
             if (originalRequest?.url?.includes('/auth/refresh')) {
               // Refresh başarısız, token'ı temizle ve logout
               await AsyncStorage.removeItem('auth_token');
               // React Native'de global store referansı kullanılabilir
               try {
-                const {useAuthStore} = await import('../stores/authStore');
+                // We use global require to avoid circular dependency
+                const { useAuthStore } = require('../stores/authStore');
                 useAuthStore.getState().logout();
               } catch (e) {
-                // Store henüz yüklenmemiş olabilir, sessizce devam et
+                // Store yet to be loaded, continue silently
               }
             } else if (token && originalRequest) {
               // Token refresh dene
               try {
-                const {authApi} = await import('../services/api/authApi');
+                const { authApi } = require('../services/api/authApi');
                 const refreshResponse = await authApi.refreshToken(token);
-                
+
                 // Yeni token ile orijinal isteği tekrar dene
                 if (originalRequest.headers) {
                   originalRequest.headers.Authorization = `Bearer ${refreshResponse.token}`;
@@ -288,10 +289,10 @@ class ApiClient {
                 await AsyncStorage.removeItem('auth_token');
                 // React Native'de global store referansı kullanılabilir
                 try {
-                  const {useAuthStore} = await import('../stores/authStore');
+                  const { useAuthStore } = require('../stores/authStore');
                   useAuthStore.getState().logout();
                 } catch (e) {
-                  // Store henüz yüklenmemiş olabilir, sessizce devam et
+                  // Store yet to be loaded, continue silently
                 }
               }
             } else {
@@ -300,7 +301,7 @@ class ApiClient {
           }
 
           // Use error handler for user-friendly messages
-          const {userMessage} = this.errorHandler(error, {
+          const { userMessage } = this.errorHandler(error, {
             action: 'api_request',
             additionalData: {
               status,
@@ -314,7 +315,7 @@ class ApiClient {
           const enhancedError = new Error(errorMessage);
           (enhancedError as any).status = status;
           (enhancedError as any).originalError = error;
-          
+
           return Promise.reject(enhancedError);
         } else if (error.request) {
           // Request made but no response (network error)
@@ -407,9 +408,9 @@ class ApiClient {
     await AsyncStorage.removeItem('auth_token');
   }
 
-  async get<T>(url: string, config?: InternalAxiosRequestConfig, retryConfig?: RetryConfig): Promise<T> {
+  async get<T>(url: string, config?: any, retryConfig?: RetryConfig): Promise<T> {
     const requestKey = this.getRequestKey('GET', url);
-    
+
     // Check for duplicate request
     if (pendingRequests.has(requestKey)) {
       if (__DEV__) {
@@ -441,7 +442,7 @@ class ApiClient {
           }),
           retryConfig
         );
-        
+
         // Development modda response loglama
         if (__DEV__) {
           console.log(`[API] GET ${url} Response:`, response.data);
@@ -479,7 +480,7 @@ class ApiClient {
             throw notFoundError;
           }
         }
-        
+
         // Development modda hata loglama (404 ve 503 Agora token hariç)
         if (__DEV__) {
           const is404 = error instanceof AxiosError && error.response?.status === 404;
@@ -487,7 +488,7 @@ class ApiClient {
           // /role-request/me endpoint'i için 404 hatası beklenen bir durum (talep yok demektir)
           const isRoleRequestMe = url.includes('/role-request/me');
           const shouldLogError = !is404 && !is503Agora && !(is404 && isRoleRequestMe);
-          
+
           if (shouldLogError) {
             console.error(`[API] GET ${url} Error:`, error);
           } else if (is404 && isRoleRequestMe) {
@@ -505,7 +506,7 @@ class ApiClient {
             notFoundError.response = error.response;
             throw notFoundError;
           }
-          
+
           if (error.response?.data) {
             const apiError = error.response.data as ApiResponse<unknown>;
             const errorMessage = apiError.error || error.message || 'Bilinmeyen bir hata oluştu';
@@ -532,9 +533,9 @@ class ApiClient {
     return requestPromise;
   }
 
-  async post<T>(url: string, data?: unknown, config?: InternalAxiosRequestConfig, retryConfig?: RetryConfig): Promise<T> {
+  async post<T>(url: string, data?: unknown, config?: any, retryConfig?: RetryConfig): Promise<T> {
     const requestKey = this.getRequestKey('POST', url, data);
-    
+
     // Check for duplicate request
     if (pendingRequests.has(requestKey)) {
       if (__DEV__) {
@@ -566,7 +567,7 @@ class ApiClient {
           }),
           retryConfig
         );
-        
+
         // Development modda response loglama
         if (__DEV__) {
           console.log(`[API] POST ${url} Response:`, response.data);
@@ -609,7 +610,7 @@ class ApiClient {
             }
           }
         }
-        
+
         // Development modda hata loglama (503 Agora token hariç)
         if (__DEV__) {
           const shouldLogError = !(error instanceof AxiosError && error.response?.status === 503 && url.includes('/agora/token'));
@@ -629,7 +630,7 @@ class ApiClient {
             // Backend'den gelen hata mesajını kullan
             // Eğer response.data bir object ise ve error property'si varsa kullan
             let errorMessage = 'Bilinmeyen bir hata oluştu';
-            
+
             if (apiError && typeof apiError === 'object') {
               // ApiResponse formatı: {success: false, error: "..."}
               if ('error' in apiError && typeof apiError.error === 'string') {
@@ -638,7 +639,7 @@ class ApiClient {
                 errorMessage = (apiError as any).message;
               }
             }
-            
+
             throw new Error(errorMessage);
           }
           if (error.request) {
@@ -662,9 +663,9 @@ class ApiClient {
     return requestPromise;
   }
 
-  async put<T>(url: string, data?: unknown, config?: InternalAxiosRequestConfig, retryConfig?: RetryConfig): Promise<T> {
+  async put<T>(url: string, data?: unknown, config?: any, retryConfig?: RetryConfig): Promise<T> {
     const requestKey = this.getRequestKey('PUT', url, data);
-    
+
     // Check for duplicate request
     if (pendingRequests.has(requestKey)) {
       if (__DEV__) {
@@ -730,9 +731,9 @@ class ApiClient {
     return requestPromise;
   }
 
-  async delete<T>(url: string, config?: InternalAxiosRequestConfig, retryConfig?: RetryConfig): Promise<T> {
+  async delete<T>(url: string, config?: any, retryConfig?: RetryConfig): Promise<T> {
     const requestKey = this.getRequestKey('DELETE', url);
-    
+
     // Check for duplicate request
     if (pendingRequests.has(requestKey)) {
       if (__DEV__) {

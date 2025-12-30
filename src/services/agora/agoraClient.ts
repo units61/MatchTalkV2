@@ -9,7 +9,6 @@ import {
   AudioProfileType,
   AudioScenarioType,
   ConnectionStateType,
-  LOCAL_AUDIO_STREAM_STATE,
 } from 'react-native-agora';
 import { config } from '../../lib/config';
 import { Platform } from 'react-native';

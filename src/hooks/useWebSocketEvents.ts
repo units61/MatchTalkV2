@@ -1,7 +1,7 @@
-import {useEffect, useRef} from 'react';
-import {useWebSocketEventStore} from '../stores/websocketEventStore';
-import {useRoomsStore} from '../stores/roomsStore';
-import {useNavigation} from './useNavigation';
+import { useEffect, useRef } from 'react';
+import { useWebSocketEventStore } from '../stores/websocketEventStore';
+import { useRoomsStore } from '../stores/roomsStore';
+import { useNavigation } from './useNavigation';
 import {
   RoomUpdateEvent,
   RoomCreatedEvent,
@@ -26,7 +26,7 @@ interface UseWebSocketEventsOptions {
 
 export const useWebSocketEvents = (options: UseWebSocketEventsOptions = {}) => {
   const subscribe = useWebSocketEventStore((state) => state.subscribe);
-  const {fetchRooms, updateRoom} = useRoomsStore();
+  const { fetchRooms, updateRoom } = useRoomsStore();
   const navigation = useNavigation();
   const optionsRef = useRef(options);
 
@@ -42,7 +42,7 @@ export const useWebSocketEvents = (options: UseWebSocketEventsOptions = {}) => {
     if (options.onRoomUpdate || true) {
       const unsubscribe = subscribe('room-update', (data: RoomUpdateEvent) => {
         if (data.room) {
-          updateRoom(data.room.id, data.room);
+          updateRoom(data.room.id, data.room as any);
         }
         optionsRef.current.onRoomUpdate?.(data);
       });
@@ -63,9 +63,9 @@ export const useWebSocketEvents = (options: UseWebSocketEventsOptions = {}) => {
       const unsubscribe = subscribe('room-closed', (data: RoomClosedEvent) => {
         fetchRooms();
         // Navigate back if we're in the closed room
-        const currentParams = navigation.currentParams;
+        const currentParams = (navigation as any).currentParams;
         if (currentParams?.roomId === data.roomId) {
-          navigation.goBack();
+          (navigation as any).goBack();
         }
         optionsRef.current.onRoomClosed?.(data);
       });

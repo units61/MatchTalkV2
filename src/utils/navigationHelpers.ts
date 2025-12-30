@@ -3,9 +3,9 @@
  * Utility functions for navigation operations
  */
 
-import {NavigationContainerRef} from '@react-navigation/native';
-import {generateDeepLink} from './deepLinking';
-import {Share} from 'react-native';
+import { NavigationContainerRef } from '@react-navigation/native';
+import { generateDeepLink } from './deepLinking';
+import { Share } from 'react-native';
 
 let navigationRef: NavigationContainerRef<any> | null = null;
 
@@ -21,7 +21,7 @@ export function setNavigationRef(ref: NavigationContainerRef<any> | null) {
  */
 export function navigate(screen: string, params?: Record<string, any>) {
   if (navigationRef?.isReady()) {
-    navigationRef.navigate(screen as never, params as never);
+    (navigationRef as any).navigate(screen, params);
   } else {
     console.warn('[Navigation] Navigation ref is not ready');
   }
@@ -43,7 +43,7 @@ export function reset(screen: string, params?: Record<string, any>) {
   if (navigationRef?.isReady()) {
     navigationRef.reset({
       index: 0,
-      routes: [{name: screen as never, params: params as never}],
+      routes: [{ name: screen as never, params: params as never }],
     });
   }
 }
@@ -74,7 +74,7 @@ export function getCurrentRouteName(): string | undefined {
  */
 export async function shareRoomLink(roomId: string) {
   try {
-    const deepLink = generateDeepLink('Room', {roomId});
+    const deepLink = generateDeepLink('Room', { roomId });
     await Share.share({
       message: `MatchTalk odasına katıl: ${deepLink}`,
       url: deepLink,
@@ -90,7 +90,7 @@ export async function shareRoomLink(roomId: string) {
  */
 export async function shareProfileLink(userId: string) {
   try {
-    const deepLink = generateDeepLink('Profile', {userId});
+    const deepLink = generateDeepLink('Profile', { userId });
     await Share.share({
       message: `MatchTalk profilini görüntüle: ${deepLink}`,
       url: deepLink,
@@ -106,7 +106,7 @@ export async function shareProfileLink(userId: string) {
  */
 export async function shareInviteLink(inviteCode: string) {
   try {
-    const deepLink = generateDeepLink('Home', {inviteCode});
+    const deepLink = generateDeepLink('Home', { inviteCode });
     await Share.share({
       message: `MatchTalk'a katıl: ${deepLink}`,
       url: deepLink,

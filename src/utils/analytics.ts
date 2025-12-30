@@ -47,15 +47,15 @@ export function updateOnlineStatus(online: boolean): void {
     flushQueue();
   }
 }
-let navigationPath: Array<{page: string; timestamp: number}> = [];
+let navigationPath: Array<{ page: string; timestamp: number }> = [];
 let navigationPathTimer: NodeJS.Timeout | null = null;
-let funnelSteps: Map<string, Array<{step: string; timestamp: number; data?: Record<string, any>}>> = new Map();
+let funnelSteps: Map<string, Array<{ step: string; timestamp: number; data?: Record<string, any> }>> = new Map();
 
 /**
  * Initialize analytics
  */
 export function initAnalytics(customConfig?: Partial<AnalyticsConfig>): void {
-  config = {...DEFAULT_CONFIG, ...customConfig};
+  config = { ...DEFAULT_CONFIG, ...customConfig };
 
   if (!config.enabled) {
     return;
@@ -76,13 +76,13 @@ export function initAnalytics(customConfig?: Partial<AnalyticsConfig>): void {
           if (Array.isArray(parsed)) {
             // Check if more than 30% of events are invalid
             const invalidCount = parsed.filter((event) => {
-              return !event || 
-                     typeof event !== 'object' || 
-                     !event.eventType || 
-                     typeof event.eventType !== 'string' || 
-                     event.eventType.trim() === '';
+              return !event ||
+                typeof event !== 'object' ||
+                !event.eventType ||
+                typeof event.eventType !== 'string' ||
+                event.eventType.trim() === '';
             }).length;
-            
+
             if (invalidCount > parsed.length * 0.3) {
               if (__DEV__) {
                 console.warn(`[Analytics] High corruption rate (${invalidCount}/${parsed.length}), clearing storage`);
@@ -98,10 +98,10 @@ export function initAnalytics(customConfig?: Partial<AnalyticsConfig>): void {
         if (__DEV__) {
           console.error('[Analytics] Error checking storage, clearing:', error);
         }
-        await AsyncStorage.removeItem(QUEUE_STORAGE_KEY).catch(() => {});
+        await AsyncStorage.removeItem(QUEUE_STORAGE_KEY).catch(() => { });
       }
     };
-    
+
     clearCorruptedStorage();
   }
 
@@ -378,7 +378,7 @@ export async function flushQueue(): Promise<void> {
     if (!event || typeof event !== 'object') {
       return false;
     }
-    
+
     const eventType = event.eventType;
     if (!eventType || typeof eventType !== 'string' || eventType.trim() === '') {
       if (__DEV__) {
@@ -390,7 +390,7 @@ export async function flushQueue(): Promise<void> {
       }
       return false;
     }
-    
+
     return true;
   });
 
@@ -415,9 +415,9 @@ export async function flushQueue(): Promise<void> {
   eventQueue = [];
 
   try {
-    // Import dynamically to avoid circular dependency
-    const {analyticsApi} = await import('../services/api/analyticsApi');
-    
+    // Use require to avoid circular dependency and TS1323
+    const { analyticsApi } = require('../services/api/analyticsApi');
+
     // Send events in batches
     for (let i = 0; i < eventsToSend.length; i += config.batchSize) {
       const batch = eventsToSend.slice(i, i + config.batchSize);
@@ -434,7 +434,7 @@ export async function flushQueue(): Promise<void> {
       if (__DEV__) {
         console.error('[Analytics] Validation error detected, clearing storage:', error?.response?.data);
       }
-      
+
       // Clear storage to prevent infinite retry loop
       if (config.enableOfflineQueue) {
         await AsyncStorage.removeItem(QUEUE_STORAGE_KEY);
@@ -446,14 +446,14 @@ export async function flushQueue(): Promise<void> {
     // If send fails, put valid events back in queue (only if they're still valid)
     // Filter again to ensure no invalid events are re-queued
     const stillValidEvents = eventsToSend.filter((event) => {
-      return event && 
-             typeof event === 'object' && 
-             typeof event.eventType === 'string' && 
-             event.eventType.trim() !== '';
+      return event &&
+        typeof event === 'object' &&
+        typeof event.eventType === 'string' &&
+        event.eventType.trim() !== '';
     });
-    
+
     eventQueue = [...stillValidEvents, ...eventQueue];
-    
+
     // Save to storage
     if (config.enableOfflineQueue) {
       await saveQueueToStorage();
@@ -499,7 +499,7 @@ async function loadQueueFromStorage(): Promise<void> {
             }
             return false;
           }
-          
+
           // Check if eventType exists and is valid
           if (!('eventType' in event)) {
             if (__DEV__) {
@@ -507,7 +507,7 @@ async function loadQueueFromStorage(): Promise<void> {
             }
             return false;
           }
-          
+
           const eventType = event.eventType;
           if (!eventType || typeof eventType !== 'string' || eventType.trim() === '') {
             if (__DEV__) {
@@ -519,7 +519,7 @@ async function loadQueueFromStorage(): Promise<void> {
             }
             return false;
           }
-          
+
           return true;
         });
 
@@ -528,7 +528,7 @@ async function loadQueueFromStorage(): Promise<void> {
           if (__DEV__) {
             console.warn(`[Analytics] Removed ${invalidCount} invalid events from storage`);
           }
-          
+
           // If more than 50% of events are invalid, clear storage (likely corruption)
           if (invalidCount > parsed.length * 0.5) {
             if (__DEV__) {
@@ -538,7 +538,7 @@ async function loadQueueFromStorage(): Promise<void> {
             eventQueue = [];
             return;
           }
-          
+
           // Save cleaned queue back to storage
           await saveQueueToStorage();
         }
@@ -548,12 +548,12 @@ async function loadQueueFromStorage(): Promise<void> {
           if (!event || typeof event !== 'object') {
             return false;
           }
-          
+
           // Deep check - ensure eventType exists and is valid
           if (!('eventType' in event)) {
             return false;
           }
-          
+
           const eventType = event.eventType;
           if (!eventType || typeof eventType !== 'string' || eventType.trim() === '') {
             if (__DEV__) {
@@ -561,7 +561,7 @@ async function loadQueueFromStorage(): Promise<void> {
             }
             return false;
           }
-          
+
           return true;
         });
 
@@ -571,9 +571,9 @@ async function loadQueueFromStorage(): Promise<void> {
           if (__DEV__) {
             console.warn(`[Analytics] Removed ${removedCount} invalid events in final validation before flush`);
           }
-          
+
           eventQueue = validatedQueue;
-          
+
           // If too many events were invalid, clear storage
           if (removedCount > eventQueue.length * 0.3) {
             if (__DEV__) {
@@ -583,7 +583,7 @@ async function loadQueueFromStorage(): Promise<void> {
             eventQueue = [];
             return;
           }
-          
+
           // Save cleaned queue
           await saveQueueToStorage();
         }
@@ -594,7 +594,7 @@ async function loadQueueFromStorage(): Promise<void> {
         if (__DEV__) {
           console.log(`[Analytics] Loaded ${eventQueue.length} events from storage (will not flush immediately to prevent errors)`);
         }
-        
+
         // Clear the queue loaded from storage - we'll only track new events
         // This is a temporary measure until we can identify why storage events are corrupted
         eventQueue = [];
@@ -682,8 +682,8 @@ function startNavigationPathTracking(): void {
     if (navigationPath.length > 0) {
       const path = [...navigationPath];
       const steps = path.length;
-      const duration = path.length > 1 
-        ? path[path.length - 1].timestamp - path[0].timestamp 
+      const duration = path.length > 1
+        ? path[path.length - 1].timestamp - path[0].timestamp
         : 0;
 
       trackEvent('navigation_path', {
@@ -733,10 +733,10 @@ export async function trackFunnelCompletion(
   duration?: number,
 ): Promise<void> {
   const steps = funnelSteps.get(funnelName) || [];
-  
+
   if (steps.length > 0) {
     const actualDuration = duration || (Date.now() - steps[0].timestamp);
-    
+
     await trackEvent('funnel_completion', {
       funnelName,
       steps: steps.length,
@@ -758,10 +758,10 @@ export async function trackFunnelDropoff(
   reason?: string,
 ): Promise<void> {
   const steps = funnelSteps.get(funnelName) || [];
-  
+
   if (steps.length > 0) {
     const duration = Date.now() - steps[0].timestamp;
-    
+
     await trackEvent('funnel_dropoff', {
       funnelName,
       step,
@@ -778,7 +778,7 @@ export async function trackFunnelDropoff(
 /**
  * Get navigation path
  */
-export function getNavigationPath(): Array<{page: string; timestamp: number}> {
+export function getNavigationPath(): Array<{ page: string; timestamp: number }> {
   return [...navigationPath];
 }
 

@@ -8,8 +8,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import * as Sentry from '@sentry/react-native';
 
-export default function App() {
+// Sentry is initialized in BootScreen, but we wrap it here too for maximum stability
+const SentryApp = Sentry.wrap(App);
+export default SentryApp;
+
+function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>

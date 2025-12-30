@@ -17,43 +17,46 @@ export default function BootScreen() {
     useEffect(() => {
         let mounted = true;
 
+        // 🛡️ Time-out Guard: If init takes longer than 5s, force navigate to login
+        const timeoutGuard = setTimeout(() => {
+            if (mounted) {
+                console.warn('[BootScreen] Init timed out, forcing navigation');
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    })
+                );
+            }
+        }, 5000);
+
         const init = async () => {
             try {
-                // 🔥 iOS frame guarantee - First frame must be empty
+                // 🔥 iOS frame guarantee
                 await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
 
-                // 1. Init processes (Safely after first frame)
-                try {
-                    initErrorTracking({
-                        enabled: true,
-                        environment: __DEV__ ? 'development' : 'production',
-                        service: 'sentry'
-                    });
-                } catch { }
-
-                try {
-                    initAnalytics({
-                        enabled: true,
-                        batchSize: 10,
-                        batchInterval: 5000
-                    });
-                } catch { }
-
+                // Safe initialization
+                try { initErrorTracking(); } catch { }
+                try { initAnalytics(); } catch { }
                 try { initAppStateManagement(); } catch { }
                 try { initPerformanceMonitoring(); } catch { }
 
-                // 2. Data Loading
                 const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_KEY);
+
+                // Perform data loading with timeout
                 if (onboardingCompleted === 'true') {
-                    await loadUser().catch(() => { });
+                    // loadUser internally has its own error handling, but we wrap it to be sure
+                    await Promise.race([
+                        loadUser(),
+                        new Promise(r => setTimeout(r, 3000)) // loadUser max 3s wait
+                    ]).catch(() => { });
                 }
 
-                // 3. iOS native stack stabilize - MUTLAKA 100ms (PROD tecrübe)
-                await new Promise(r => setTimeout(r, 100));
-
                 if (!mounted) return;
+                clearTimeout(timeoutGuard);
 
-                // 4. Final navigation
+                await new Promise(r => setTimeout(r, 100)); // Stabilization
+
                 let targetRoute = 'Onboarding';
                 if (onboardingCompleted === 'true') {
                     targetRoute = isAuthenticated ? 'MainTabs' : 'Login';
@@ -67,6 +70,7 @@ export default function BootScreen() {
                 );
             } catch (error) {
                 if (!mounted) return;
+                clearTimeout(timeoutGuard);
                 console.error('[BootScreen] Init error:', error);
                 navigation.dispatch(
                     CommonActions.reset({
@@ -81,8 +85,9 @@ export default function BootScreen() {
 
         return () => {
             mounted = false;
+            clearTimeout(timeoutGuard);
         };
-    }, []);
+    }, [isAuthenticated, loadUser, navigation]);
 
     return <View style={styles.container} />;
 }

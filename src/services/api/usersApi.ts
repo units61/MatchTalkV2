@@ -1,5 +1,5 @@
-import {apiClient} from '../../lib/apiClient';
-import {User} from '../../types/user';
+import { apiClient } from '../../lib/apiClient';
+import { User } from '../../types/user';
 
 export interface UpdateUserInput {
   name?: string;
@@ -42,7 +42,7 @@ export const usersApi = {
   /**
    * Upload avatar
    */
-  async uploadAvatar(fileUri: string): Promise<{avatar: string}> {
+  async uploadAvatar(fileUri: string): Promise<{ avatar: string }> {
     // Note: In a real implementation, you would use FormData to upload the file
     // For now, this is a placeholder
     const formData = new FormData();
@@ -52,11 +52,11 @@ export const usersApi = {
       name: 'avatar.jpg',
     } as any);
 
-    return await apiClient.post<{avatar: string}>('/users/me/avatar', formData, {
+    return await apiClient.post<{ avatar: string }>('/users/me/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-    });
+    } as any);
   },
 
   /**
