@@ -3,6 +3,8 @@
  * Provides centralized error handling, logging, and user-friendly error messages
  */
 
+import * as Sentry from '@sentry/react-native';
+
 export interface ErrorContext {
   component?: string;
   action?: string;
@@ -112,7 +114,7 @@ export function getErrorSeverity(error: Error | string, context?: ErrorContext):
 }
 
 /**
- * Log error (prepared for future error tracking service integration)
+ * Log error and send to Sentry
  */
 export function logError(errorInfo: ErrorInfo): void {
   const {message, originalError, severity, context, timestamp} = errorInfo;
@@ -120,7 +122,7 @@ export function logError(errorInfo: ErrorInfo): void {
   // 404 hatalarını loglama (zaten kullanıcıya toast gösteriliyor)
   if (context?.additionalData?.status === 404 || message.includes('404') || message.includes('bulunamadı')) {
     // 404 hatalarını sessizce geç (gereksiz log spam'ini önle)
-    return
+    return;
   }
   
   // Console logging (development)
@@ -138,13 +140,35 @@ export function logError(errorInfo: ErrorInfo): void {
     });
   }
   
-  // TODO: Integrate with error tracking service (e.g., Sentry)
-  // if (errorTrackingService) {
-  //   errorTrackingService.captureException(originalError || new Error(message), {
-  //     level: severity,
-  //     tags: context,
-  //   });
-  // }
+  // Sentry'ye gönder
+  try {
+    const error = originalError || new Error(message);
+    const sentryLevel = severity === 'critical' ? 'fatal' : (severity === 'high' ? 'error' : severity === 'medium' ? 'warning' : 'info');
+    
+    const tags: Record<string, string> = {
+      source: 'errorHandler',
+      severity: String(severity),
+    };
+    if (context) {
+      if (context.component) tags.component = String(context.component);
+      if (context.action) tags.action = String(context.action);
+      if (context.userId) tags.userId = String(context.userId);
+    }
+    
+    Sentry.captureException(error, {
+      level: sentryLevel as 'fatal' | 'error' | 'warning' | 'info' | 'debug',
+      tags,
+      extra: {
+        context,
+        timestamp: timestamp.toISOString(),
+      },
+    });
+  } catch (err) {
+    // Sentry hatası olsa bile devam et
+    if (__DEV__) {
+      console.error('[ErrorHandler] Failed to send to Sentry:', err);
+    }
+  }
 }
 
 /**

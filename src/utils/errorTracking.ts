@@ -1,67 +1,12 @@
 /**
  * Error Tracking Utility
- * Prepared for integration with error tracking services (e.g., Sentry)
+ * Sentry wrapper functions - Sentry is initialized in index.js
  */
 
 import * as Sentry from '@sentry/react-native';
 import { ErrorContext, ErrorSeverity } from './errorHandler';
-import { config as appConfig } from '../lib/config';
 
-export interface ErrorTrackingConfig {
-  enabled: boolean;
-  service?: 'sentry' | 'logrocket' | 'custom';
-  dsn?: string;
-  environment?: string;
-  release?: string;
-}
-
-// Default configuration
-const defaultConfig: ErrorTrackingConfig = {
-  enabled: !__DEV__, // Production'da enabled
-  environment: __DEV__ ? 'development' : 'production',
-};
-
-let trackingConfig: ErrorTrackingConfig = defaultConfig;
-
-/**
- * Initialize error tracking service
- */
-export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): void {
-  // Wrap everything in try-catch to prevent crashes during initialization
-  try {
-    trackingConfig = { ...defaultConfig, ...customConfig };
-
-    // Sentry zaten index.js'de init edilmiş - sadece config'i güncelle
-    // Tekrar init etme, sadece trackingConfig'i güncelle
-    if (__DEV__) {
-      console.log('[ErrorTracking] Sentry already initialized in index.js, skipping re-init');
-    }
-    
-    // Config'i güncelle
-    const sentryDsn = customConfig?.dsn || appConfig.sentry.dsn;
-    const isEnabled = trackingConfig.enabled && appConfig.sentry.enabled;
-    
-    if (!isEnabled || !sentryDsn || typeof sentryDsn !== 'string' || sentryDsn.trim() === '') {
-      if (__DEV__) {
-        console.log('[ErrorTracking] Sentry disabled or DSN not configured');
-      }
-      return;
-    }
-    
-    // Sentry zaten init edilmiş, sadece config'i kaydet
-    trackingConfig.enabled = isEnabled;
-    trackingConfig.dsn = sentryDsn;
-    
-    if (__DEV__) {
-      console.log('[ErrorTracking] Config updated, Sentry already initialized');
-    }
-  } catch (error) {
-    // Top-level catch to prevent any crashes during error tracking setup
-    if (__DEV__) {
-      console.error('[ErrorTracking] Critical error during initialization:', error);
-    }
-  }
-}
+// Sentry zaten index.js'de init edilmiş - bu dosya sadece wrapper fonksiyonlar sağlıyor
 
 /**
  * Capture exception for error tracking
@@ -122,18 +67,7 @@ export function captureMessage(
   severity: ErrorSeverity = 'low',
   context?: ErrorContext
 ): void {
-  if (!trackingConfig.enabled) {
-    if (__DEV__) {
-      console.log('[ErrorTracking] Message captured:', {
-        message,
-        severity,
-        context,
-      });
-    }
-    return;
-  }
-
-  // Send to Sentry - wrap in additional try-catch to prevent crashes
+  // Her zaman Sentry'ye gönder
   try {
     if (!message || typeof message !== 'string') {
       if (__DEV__) {
@@ -145,7 +79,10 @@ export function captureMessage(
     const sentryLevel = severity === 'critical' ? 'fatal' : (severity === 'high' ? 'error' : severity === 'medium' ? 'warning' : 'info');
 
     // Safely convert context to tags
-    const tags: Record<string, string> = {};
+    const tags: Record<string, string> = {
+      source: 'errorTracking',
+      severity: String(severity),
+    };
     if (context && typeof context === 'object') {
       Object.keys(context).forEach(key => {
         const value = context[key];
@@ -160,6 +97,7 @@ export function captureMessage(
       tags,
       extra: {
         context,
+        severity,
       },
     });
   } catch (err) {
@@ -174,11 +112,7 @@ export function captureMessage(
  * Set user context for error tracking
  */
 export function setUserContext(userId: string, userData?: Record<string, unknown>): void {
-  if (!trackingConfig.enabled) {
-    return;
-  }
-
-  // Set user context in Sentry
+  // Her zaman Sentry'ye gönder
   try {
     if (!userId || typeof userId !== 'string') {
       if (__DEV__) {
@@ -203,11 +137,7 @@ export function setUserContext(userId: string, userData?: Record<string, unknown
  * Clear user context
  */
 export function clearUserContext(): void {
-  if (!trackingConfig.enabled) {
-    return;
-  }
-
-  // Clear user context in Sentry
+  // Her zaman Sentry'ye gönder
   try {
     Sentry.setUser(null);
   } catch (err) {
@@ -227,11 +157,7 @@ export function addBreadcrumb(
   level: 'debug' | 'info' | 'warning' | 'error' = 'info',
   data?: Record<string, unknown>
 ): void {
-  if (!trackingConfig.enabled) {
-    return;
-  }
-
-  // Add breadcrumb to Sentry
+  // Her zaman Sentry'ye gönder
   try {
     if (!message || typeof message !== 'string') {
       if (__DEV__) {
