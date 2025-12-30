@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Darwin
 
 @objc(ExceptionsManagerFix)
 class ExceptionsManagerFix: NSObject {
