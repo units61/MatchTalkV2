@@ -31,65 +31,29 @@ export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): 
   try {
     trackingConfig = { ...defaultConfig, ...customConfig };
 
-    // Use Sentry if enabled and DSN is configured
+    // Sentry zaten index.js'de init edilmiş - sadece config'i güncelle
+    // Tekrar init etme, sadece trackingConfig'i güncelle
+    if (__DEV__) {
+      console.log('[ErrorTracking] Sentry already initialized in index.js, skipping re-init');
+    }
+    
+    // Config'i güncelle
     const sentryDsn = customConfig?.dsn || appConfig.sentry.dsn;
     const isEnabled = trackingConfig.enabled && appConfig.sentry.enabled;
-
+    
     if (!isEnabled || !sentryDsn || typeof sentryDsn !== 'string' || sentryDsn.trim() === '') {
       if (__DEV__) {
         console.log('[ErrorTracking] Sentry disabled or DSN not configured');
       }
       return;
     }
-
-    try {
-      const environment = trackingConfig.environment || appConfig.sentry.environment || (__DEV__ ? 'development' : 'production');
-
-      // Validate DSN format before initializing
-      if (!sentryDsn.startsWith('http://') && !sentryDsn.startsWith('https://')) {
-        if (__DEV__) {
-          console.warn('[ErrorTracking] Invalid Sentry DSN format');
-        }
-        return;
-      }
-
-      Sentry.init({
-        dsn: sentryDsn,
-        environment,
-        release: trackingConfig.release,
-        enableAutoSessionTracking: true,
-        enableNative: true, // 👈 iOS stability improvement
-        sessionTrackingIntervalMillis: 30000,
-        tracesSampleRate: environment === 'production' ? 0.1 : 1.0, // 10% in production, 100% in dev
-        debug: environment === 'development',
-        beforeSend(event, hint) {
-          try {
-            // Filter out known non-critical errors in development
-            if (environment === 'development') {
-              // Don't send network errors in development
-              if (event?.exception?.values?.[0]?.value?.includes('Network request failed')) {
-                return null;
-              }
-            }
-            return event;
-          } catch (err) {
-            // If beforeSend fails, return event anyway to prevent crash
-            if (__DEV__) {
-              console.warn('[ErrorTracking] beforeSend error:', err);
-            }
-            return event;
-          }
-        },
-      });
-
-      if (__DEV__) {
-        console.log('[ErrorTracking] Sentry initialized successfully');
-      }
-    } catch (error) {
-      // Silently fail - don't crash the app if Sentry initialization fails
-      if (__DEV__) {
-        console.error('[ErrorTracking] Failed to initialize Sentry:', error);
-      }
+    
+    // Sentry zaten init edilmiş, sadece config'i kaydet
+    trackingConfig.enabled = isEnabled;
+    trackingConfig.dsn = sentryDsn;
+    
+    if (__DEV__) {
+      console.log('[ErrorTracking] Config updated, Sentry already initialized');
     }
   } catch (error) {
     // Top-level catch to prevent any crashes during error tracking setup
@@ -107,18 +71,8 @@ export function captureException(
   context?: ErrorContext,
   severity: ErrorSeverity = 'high'
 ): void {
-  if (!trackingConfig.enabled) {
-    if (__DEV__) {
-      console.error('[ErrorTracking] Exception captured:', {
-        error,
-        context,
-        severity,
-      });
-    }
-    return;
-  }
-
-  // Send to Sentry - wrap in additional try-catch to prevent crashes
+  // Her zaman Sentry'ye gönder - trackingConfig.enabled kontrolü yapma
+  // Çünkü Sentry zaten index.js'de init edilmiş ve her zaman aktif olmalı
   try {
     if (!error || typeof error !== 'object') {
       if (__DEV__) {
@@ -130,7 +84,10 @@ export function captureException(
     const sentryLevel = severity === 'critical' ? 'fatal' : (severity === 'high' ? 'error' : severity === 'medium' ? 'warning' : 'info');
 
     // Safely convert context to tags
-    const tags: Record<string, string> = {};
+    const tags: Record<string, string> = {
+      source: 'errorTracking',
+      severity: String(severity),
+    };
     if (context && typeof context === 'object') {
       Object.keys(context).forEach(key => {
         const value = context[key];
@@ -140,11 +97,13 @@ export function captureException(
       });
     }
 
+    // Sentry'ye gönder - her zaman
     Sentry.captureException(error, {
       level: sentryLevel as 'fatal' | 'error' | 'warning' | 'info' | 'debug',
       tags,
       extra: {
         context,
+        severity,
       },
     });
   } catch (err) {

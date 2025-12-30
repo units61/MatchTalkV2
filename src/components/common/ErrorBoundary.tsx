@@ -1,6 +1,6 @@
 import React, {Component, ErrorInfo, ReactNode} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import {captureException} from '../../utils/errorTracking';
+import * as Sentry from '@sentry/react-native';
 
 interface Props {
   children: ReactNode;
@@ -23,14 +23,20 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Direkt Sentry'ye gönder
     try {
-      captureException(error, {
-        component: 'ErrorBoundary',
-        additionalData: {
-          componentStack: errorInfo.componentStack,
+      Sentry.captureException(error, {
+        level: 'error',
+        tags: {
+          source: 'ErrorBoundary',
+          component: 'ErrorBoundary',
         },
-      }, 'high');
+        extra: {
+          componentStack: errorInfo.componentStack,
+          errorMessage: error.message,
+          errorStack: error.stack,
+        },
+      });
     } catch (sentryError) {
       // Sentry'ye gönderirken hata olursa uygulama crash olmasın
       if (__DEV__) {
