@@ -9,10 +9,11 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Sentry from '@sentry/react-native';
 
 const { width, height } = Dimensions.get('window');
 
-export function AnimatedBackground() {
+function AnimatedBackgroundInner() {
   // Animation values for gradient orbs
   const orb1X = useSharedValue(0);
   const orb1Y = useSharedValue(0);
@@ -115,6 +116,35 @@ export function AnimatedBackground() {
       ))}
     </View>
   );
+}
+
+export function AnimatedBackground() {
+  try {
+    return <AnimatedBackgroundInner />;
+  } catch (error) {
+    // Hata durumunda Sentry'ye gönder ve fallback göster
+    Sentry.captureException(error, {
+      level: 'error',
+      tags: {
+        component: 'AnimatedBackground',
+      },
+      extra: {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+    
+    // Fallback: Basit gradient background
+    return (
+      <View style={[styles.container, { backgroundColor: '#0f0c29' }]}>
+        <LinearGradient
+          colors={['#0f0c29', '#1a0f3d', '#2d1b4e']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+    );
+  }
 }
 
 function FloatingParticle({ index }: { index: number }) {
