@@ -8,6 +8,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 
 const navItems = [
   {route: 'Rooms', icon: 'mic' as const, label: 'Odalar'},
@@ -22,25 +23,59 @@ export function BottomNav() {
   const route = useRoute();
   const activeIndex = navItems.findIndex(item => item.route === route.name);
 
-  return (
-    <View style={styles.container}>
-      <BlurView intensity={80} tint="dark" style={styles.nav}>
-        <View style={styles.navContent}>
-          {navItems.map((item, index) => {
-            const isActive = index === activeIndex;
-            return (
-              <NavItem
-                key={item.route}
-                item={item}
-                isActive={isActive}
-                onPress={() => navigation.navigate(item.route as never)}
-              />
-            );
-          })}
+  try {
+    return (
+      <View style={styles.container}>
+        <BlurView intensity={80} tint="dark" style={styles.nav}>
+          <View style={styles.navContent}>
+            {navItems.map((item, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <NavItem
+                  key={item.route}
+                  item={item}
+                  isActive={isActive}
+                  onPress={() => navigation.navigate(item.route as never)}
+                />
+              );
+            })}
+          </View>
+        </BlurView>
+      </View>
+    );
+  } catch (error) {
+    // BlurView hatası durumunda Sentry'ye gönder ve fallback göster
+    Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+      level: 'error',
+      tags: {
+        component: 'BottomNav',
+      },
+      extra: {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+    
+    // Fallback: Normal View
+    return (
+      <View style={styles.container}>
+        <View style={[styles.nav, styles.fallbackNav]}>
+          <View style={styles.navContent}>
+            {navItems.map((item, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <NavItem
+                  key={item.route}
+                  item={item}
+                  isActive={isActive}
+                  onPress={() => navigation.navigate(item.route as never)}
+                />
+              );
+            })}
+          </View>
         </View>
-      </BlurView>
-    </View>
-  );
+      </View>
+    );
+  }
 }
 
 function NavItem({
@@ -103,6 +138,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  fallbackNav: {
+    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Daha opak fallback
   },
   navContent: {
     flexDirection: 'row',
