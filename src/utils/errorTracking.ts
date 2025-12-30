@@ -4,8 +4,8 @@
  */
 
 import * as Sentry from '@sentry/react-native';
-import {ErrorContext, ErrorSeverity} from './errorHandler';
-import {config as appConfig} from '../lib/config';
+import { ErrorContext, ErrorSeverity } from './errorHandler';
+import { config as appConfig } from '../lib/config';
 
 export interface ErrorTrackingConfig {
   enabled: boolean;
@@ -29,7 +29,7 @@ let trackingConfig: ErrorTrackingConfig = defaultConfig;
 export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): void {
   // Wrap everything in try-catch to prevent crashes during initialization
   try {
-    trackingConfig = {...defaultConfig, ...customConfig};
+    trackingConfig = { ...defaultConfig, ...customConfig };
 
     // Use Sentry if enabled and DSN is configured
     const sentryDsn = customConfig?.dsn || appConfig.sentry.dsn;
@@ -44,7 +44,7 @@ export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): 
 
     try {
       const environment = trackingConfig.environment || appConfig.sentry.environment || (__DEV__ ? 'development' : 'production');
-      
+
       // Validate DSN format before initializing
       if (!sentryDsn.startsWith('http://') && !sentryDsn.startsWith('https://')) {
         if (__DEV__) {
@@ -58,6 +58,7 @@ export function initErrorTracking(customConfig?: Partial<ErrorTrackingConfig>): 
         environment,
         release: trackingConfig.release,
         enableAutoSessionTracking: true,
+        enableNative: true, // 👈 iOS stability improvement
         sessionTrackingIntervalMillis: 30000,
         tracesSampleRate: environment === 'production' ? 0.1 : 1.0, // 10% in production, 100% in dev
         debug: environment === 'development',
@@ -127,7 +128,7 @@ export function captureException(
     }
 
     const sentryLevel = severity === 'critical' ? 'fatal' : (severity === 'high' ? 'error' : severity === 'medium' ? 'warning' : 'info');
-    
+
     // Safely convert context to tags
     const tags: Record<string, string> = {};
     if (context && typeof context === 'object') {
@@ -183,7 +184,7 @@ export function captureMessage(
     }
 
     const sentryLevel = severity === 'critical' ? 'fatal' : (severity === 'high' ? 'error' : severity === 'medium' ? 'warning' : 'info');
-    
+
     // Safely convert context to tags
     const tags: Record<string, string> = {};
     if (context && typeof context === 'object') {
