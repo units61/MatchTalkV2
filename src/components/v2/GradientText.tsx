@@ -10,6 +10,17 @@ interface GradientTextProps {
 }
 
 export function GradientText({ children, style, className }: GradientTextProps) {
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  if (!ready) {
+    return <Text style={[styles.text, style, { color: '#fff' }]}>{children}</Text>;
+  }
+
   return (
     <MaskedView
       maskElement={

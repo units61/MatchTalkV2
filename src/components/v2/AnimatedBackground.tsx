@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, Dimensions} from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -8,70 +8,82 @@ import Animated, {
   interpolate,
   Easing,
 } from 'react-native-reanimated';
-import {LinearGradient} from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export function AnimatedBackground() {
   // Animation values for gradient orbs
   const orb1X = useSharedValue(0);
   const orb1Y = useSharedValue(0);
   const orb1Scale = useSharedValue(1);
-  
+
   const orb2X = useSharedValue(0);
   const orb2Y = useSharedValue(0);
   const orb2Scale = useSharedValue(1);
 
+  const [ready, setReady] = React.useState(false);
+
   // Start animations
   React.useEffect(() => {
-    // Orb 1 animation
-    orb1X.value = withRepeat(
-      withTiming(100, {duration: 20000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
-    orb1Y.value = withRepeat(
-      withTiming(50, {duration: 20000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
-    orb1Scale.value = withRepeat(
-      withTiming(1.1, {duration: 20000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
+    const raf = requestAnimationFrame(() => {
+      setReady(true);
 
-    // Orb 2 animation
-    orb2X.value = withRepeat(
-      withTiming(-100, {duration: 25000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
-    orb2Y.value = withRepeat(
-      withTiming(-50, {duration: 25000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
-    orb2Scale.value = withRepeat(
-      withTiming(1.2, {duration: 25000, easing: Easing.inOut(Easing.ease)}),
-      -1,
-      true
-    );
+      // Orb 1 animation
+      orb1X.value = withRepeat(
+        withTiming(100, { duration: 20000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      orb1Y.value = withRepeat(
+        withTiming(50, { duration: 20000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      orb1Scale.value = withRepeat(
+        withTiming(1.1, { duration: 20000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+
+      // Orb 2 animation
+      orb2X.value = withRepeat(
+        withTiming(-100, { duration: 25000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      orb2Y.value = withRepeat(
+        withTiming(-50, { duration: 25000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+      orb2Scale.value = withRepeat(
+        withTiming(1.2, { duration: 25000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        true
+      );
+    });
+
+    return () => cancelAnimationFrame(raf);
   }, []);
+
+  if (!ready) {
+    return <View style={styles.container} />;
+  }
 
   const orb1Style = useAnimatedStyle(() => ({
     transform: [
-      {translateX: orb1X.value},
-      {translateY: orb1Y.value},
-      {scale: orb1Scale.value},
+      { translateX: orb1X.value },
+      { translateY: orb1Y.value },
+      { scale: orb1Scale.value },
     ],
   }));
 
   const orb2Style = useAnimatedStyle(() => ({
     transform: [
-      {translateX: orb2X.value},
-      {translateY: orb2Y.value},
-      {scale: orb2Scale.value},
+      { translateX: orb2X.value },
+      { translateY: orb2Y.value },
+      { scale: orb2Scale.value },
     ],
   }));
 
@@ -81,8 +93,8 @@ export function AnimatedBackground() {
       <Animated.View style={[styles.orb, orb1Style]}>
         <LinearGradient
           colors={['rgba(6, 182, 212, 0.3)', 'rgba(168, 85, 247, 0.3)']}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.gradient}
         />
       </Animated.View>
@@ -91,21 +103,21 @@ export function AnimatedBackground() {
       <Animated.View style={[styles.orb, orb2Style, styles.orb2]}>
         <LinearGradient
           colors={['rgba(236, 72, 153, 0.3)', 'rgba(168, 85, 247, 0.3)']}
-          start={{x: 1, y: 1}}
-          end={{x: 0, y: 0}}
+          start={{ x: 1, y: 1 }}
+          end={{ x: 0, y: 0 }}
           style={styles.gradient}
         />
       </Animated.View>
 
       {/* Floating Particles */}
-      {Array.from({length: 20}).map((_, i) => (
+      {Array.from({ length: 20 }).map((_, i) => (
         <FloatingParticle key={i} index={i} />
       ))}
     </View>
   );
 }
 
-function FloatingParticle({index}: {index: number}) {
+function FloatingParticle({ index }: { index: number }) {
   const opacity = useSharedValue(0.2);
   const translateY = useSharedValue(0);
   const left = useSharedValue(Math.random() * width);
@@ -116,12 +128,12 @@ function FloatingParticle({index}: {index: number}) {
     const delay = Math.random() * 2000;
 
     opacity.value = withRepeat(
-      withTiming(0.5, {duration: duration / 2, easing: Easing.inOut(Easing.ease)}),
+      withTiming(0.5, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
     translateY.value = withRepeat(
-      withTiming(-30, {duration, easing: Easing.inOut(Easing.ease)}),
+      withTiming(-30, { duration, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );
@@ -129,7 +141,7 @@ function FloatingParticle({index}: {index: number}) {
 
   const particleStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{translateY: translateY.value}],
+    transform: [{ translateY: translateY.value }],
     left: left.value,
     top: top.value,
   }));

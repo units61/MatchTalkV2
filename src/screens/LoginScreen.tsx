@@ -1,16 +1,16 @@
-import React, {useState} from 'react';
-import {View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Linking} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
-import Animated, {FadeInDown, FadeIn} from 'react-native-reanimated';
-import {LinearGradient} from 'expo-linear-gradient';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
-import {LoadingSpinner} from '../components/v2/LoadingSpinner';
-import {useAuthStore} from '../stores/authStore';
-import {toast} from '../stores/toastStore';
-import {config} from '../lib/config';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Linking } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
+import { LoadingSpinner } from '../components/v2/LoadingSpinner';
+import { useAuthStore } from '../stores/authStore';
+import { toast } from '../stores/toastStore';
+import { config } from '../lib/config';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -19,7 +19,19 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigation = useNavigation();
-  const {login} = useAuthStore();
+  const { login } = useAuthStore();
+  const [isReady, setIsReady] = useState(false);
+
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setIsReady(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  if (!isReady) {
+    return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+  }
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -30,7 +42,7 @@ export default function LoginScreen() {
     setError(null);
     setLoading(true);
     try {
-      await login({email: email.trim(), password});
+      await login({ email: email.trim(), password });
       // Navigation will be handled by AppNavigator based on auth state
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Giriş yapılırken bir hata oluştu';
@@ -140,8 +152,8 @@ export default function LoginScreen() {
               ) : (
                 <LinearGradient
                   colors={['#22d3ee', '#a855f7']}
-                  start={{x: 0, y: 0}}
-                  end={{x: 1, y: 0}}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                   style={styles.buttonGradient}>
                   <Text style={styles.buttonText}>Giriş Yap</Text>
                 </LinearGradient>
@@ -156,7 +168,7 @@ export default function LoginScreen() {
 
             <View style={styles.oauthContainer}>
               <TouchableOpacity
-                style={[styles.oauthButton, {marginBottom: 12}]}
+                style={[styles.oauthButton, { marginBottom: 12 }]}
                 onPress={handleGoogleLogin}
                 activeOpacity={0.7}>
                 <View style={styles.oauthIconContainer}>
@@ -170,7 +182,7 @@ export default function LoginScreen() {
                 onPress={handleAppleLogin}
                 activeOpacity={0.7}>
                 <Ionicons name="logo-apple" size={20} color="#fff" />
-                <View style={{marginLeft: 12}}>
+                <View style={{ marginLeft: 12 }}>
                   <Text style={styles.oauthButtonText}>Apple ile Giriş Yap</Text>
                 </View>
               </TouchableOpacity>

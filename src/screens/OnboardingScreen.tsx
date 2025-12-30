@@ -1,20 +1,20 @@
-import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {Ionicons} from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   withSpring,
 } from 'react-native-reanimated';
-import {LinearGradient} from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AnimatedBackground} from '../components/v2/AnimatedBackground';
-import {GlassCard} from '../components/v2/GlassCard';
-import {GradientText} from '../components/v2/GradientText';
+import { AnimatedBackground } from '../components/v2/AnimatedBackground';
+import { GlassCard } from '../components/v2/GlassCard';
+import { GradientText } from '../components/v2/GradientText';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const ONBOARDING_KEY = '@matchtalk_onboarding_completed';
 
@@ -41,46 +41,44 @@ const steps = [
   },
 ];
 
-interface OnboardingScreenProps {
-  onComplete?: () => Promise<void>;
-}
-
-export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {}) {
+export default function OnboardingScreen() {
   const [currentStep, setCurrentStep] = useState(0);
-  const navigation = useNavigation();
+  const [isReady, setIsReady] = useState(false);
+  const navigation = useNavigation<any>();
   const translateX = useSharedValue(0);
 
+  React.useEffect(() => {
+    // iOS için: Bileşen mount olduktan sonra bir frame bekle
+    const raf = requestAnimationFrame(() => {
+      setIsReady(true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   const handleNext = async () => {
+    if (!isReady) return; // Henüz hazır değilse işlem yapma
     if (currentStep < steps.length - 1) {
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
-      translateX.value = withTiming(-width * nextStep, {duration: 300});
+      translateX.value = withTiming(-width * nextStep, { duration: 300 });
     } else {
-      // onComplete callback'i çağır
-      if (onComplete) {
-        await onComplete();
-      } else {
-        // Fallback: direkt navigate et
-        await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-        navigation.navigate('Login' as never);
-      }
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      navigation.replace('Login');
     }
   };
 
   const handleSkip = async () => {
-    // onComplete callback'i çağır
-    if (onComplete) {
-      await onComplete();
-    } else {
-      // Fallback: direkt navigate et
-      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-      navigation.navigate('Login' as never);
-    }
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    navigation.replace('Login');
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{translateX: translateX.value}],
+    transform: [{ translateX: translateX.value }],
   }));
+
+  if (!isReady) {
+    return <View style={[styles.container, { backgroundColor: '#000' }]} />;
+  }
 
   return (
     <View style={styles.container}>
@@ -93,7 +91,7 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
       <View style={styles.content}>
         <Animated.View style={[styles.stepsContainer, animatedStyle]}>
           {steps.map((step, index) => (
-            <View key={index} style={[styles.step, {width}]}>
+            <View key={index} style={[styles.step, { width }]}>
               <GlassCard style={styles.card}>
                 <Animated.View
                   style={[
@@ -130,7 +128,7 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
               style={[
                 styles.progressDot,
                 index === currentStep && styles.progressDotActive,
-                index > 0 && {marginLeft: 8},
+                index > 0 && { marginLeft: 8 },
               ]}
             />
           ))}
@@ -143,13 +141,13 @@ export default function OnboardingScreen({onComplete}: OnboardingScreenProps = {
         activeOpacity={0.8}>
         <LinearGradient
           colors={['#06b6d4', '#a855f7']}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 0}}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
           style={styles.nextButtonGradient}>
           <Text style={styles.nextButtonText}>
             {currentStep === steps.length - 1 ? 'Başla' : 'Devam Et'}
           </Text>
-          <View style={{marginLeft: 8}}>
+          <View style={{ marginLeft: 8 }}>
             <Ionicons name="chevron-forward" size={20} color="white" />
           </View>
         </LinearGradient>
