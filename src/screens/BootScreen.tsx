@@ -18,13 +18,31 @@ export default function BootScreen() {
 
         const initialize = async () => {
             try {
+                // 🚨 CRITICAL: BootScreen başladı - Sentry'ye bildir
+                Sentry.addBreadcrumb({
+                    category: 'boot',
+                    message: 'BootScreen initialization started',
+                    level: 'info',
+                });
+
                 // 1. Onboarding kontrolü
                 const onboardingCompleted = await checkOnboardingCompleted();
+                
+                Sentry.addBreadcrumb({
+                    category: 'boot',
+                    message: `Onboarding check completed: ${onboardingCompleted}`,
+                    level: 'info',
+                });
                 
                 if (!mounted) return;
 
                 // 2. Eğer onboarding tamamlanmamışsa → OnboardingScreen
                 if (!onboardingCompleted) {
+                    Sentry.addBreadcrumb({
+                        category: 'boot',
+                        message: 'Navigating to OnboardingScreen',
+                        level: 'info',
+                    });
                     navigation.dispatch(
                         CommonActions.reset({
                             index: 0,
@@ -37,6 +55,11 @@ export default function BootScreen() {
                 // 3. Onboarding tamamlanmışsa → Auth kontrolü
                 try {
                     await loadUser();
+                    Sentry.addBreadcrumb({
+                        category: 'boot',
+                        message: 'User loaded successfully',
+                        level: 'info',
+                    });
                 } catch (authError) {
                     // Auth yükleme hatası olsa bile devam et (Login'e yönlendir)
                     Sentry.captureException(authError instanceof Error ? authError : new Error(String(authError)), {
@@ -58,8 +81,19 @@ export default function BootScreen() {
 
                 const currentAuthState = useAuthStore.getState().isAuthenticated;
                 
+                Sentry.addBreadcrumb({
+                    category: 'boot',
+                    message: `Auth state: ${currentAuthState}`,
+                    level: 'info',
+                });
+                
                 if (currentAuthState) {
                     // Auth varsa → MainTabs
+                    Sentry.addBreadcrumb({
+                        category: 'boot',
+                        message: 'Navigating to MainTabs',
+                        level: 'info',
+                    });
                     navigation.dispatch(
                         CommonActions.reset({
                             index: 0,
@@ -68,6 +102,11 @@ export default function BootScreen() {
                     );
                 } else {
                     // Auth yoksa → Login
+                    Sentry.addBreadcrumb({
+                        category: 'boot',
+                        message: 'Navigating to LoginScreen',
+                        level: 'info',
+                    });
                     navigation.dispatch(
                         CommonActions.reset({
                             index: 0,
@@ -85,6 +124,7 @@ export default function BootScreen() {
                     },
                     extra: {
                         errorMessage: error instanceof Error ? error.message : String(error),
+                        errorStack: error instanceof Error ? error.stack : undefined,
                     },
                 });
 
@@ -100,6 +140,11 @@ export default function BootScreen() {
             } finally {
                 if (mounted) {
                     setIsReady(true);
+                    Sentry.addBreadcrumb({
+                        category: 'boot',
+                        message: 'BootScreen initialization completed',
+                        level: 'info',
+                    });
                 }
             }
         };
