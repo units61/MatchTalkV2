@@ -251,13 +251,37 @@ if (global.Promise) {
 // iOS native tarafında exception handling override'ı
 try {
   // Native module'ü çağır (eğer mevcut ise)
-  if (global.NativeModules && global.NativeModules.ExceptionsManagerFix) {
-    global.NativeModules.ExceptionsManagerFix.setup();
+  const { NativeModules } = require('react-native');
+  if (NativeModules && NativeModules.ExceptionsManagerFix) {
+    // Promise-based çağrı
+    NativeModules.ExceptionsManagerFix.setup()
+      .then((result) => {
+        if (__DEV__) {
+          console.log('[Native Exception Handling] Activated:', result);
+        }
+        Sentry.addBreadcrumb({
+          category: 'native',
+          message: 'Native exception handling activated',
+          level: 'info',
+          data: result,
+        });
+      })
+      .catch((error) => {
+        if (__DEV__) {
+          console.warn('[Native Exception Handling] Error:', error);
+        }
+        // Hata olsa bile devam et - static initialization zaten çalıştı
+      });
+  } else {
+    // Native module yoksa static initialization zaten çalıştı
+    if (__DEV__) {
+      console.log('[Native Exception Handling] Module not available, but static initialization is active');
+    }
   }
 } catch (e) {
-  // Native module yoksa devam et
+  // Native module yoksa devam et - static initialization zaten çalıştı
   if (__DEV__) {
-    console.log('[Native Exception Handling] Not available in this build');
+    console.log('[Native Exception Handling] Not available in this build, but static initialization is active');
   }
 }
 

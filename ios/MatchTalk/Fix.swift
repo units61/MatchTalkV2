@@ -9,8 +9,9 @@
 import Foundation
 import Darwin
 
+// 🚨 CRITICAL: React Native Native Module olarak export et
 @objc(ExceptionsManagerFix)
-class ExceptionsManagerFix: NSObject {
+class ExceptionsManagerFix: NSObject, RCTBridgeModule {
   
   // 🚨 CRITICAL: Static initialization - App başlar başlamaz çalışır
   // JavaScript bundle yüklenmeden önce bile aktif olur
@@ -18,11 +19,29 @@ class ExceptionsManagerFix: NSObject {
     setupExceptionHandling()
   }()
   
+  // React Native Native Module protokolü
+  static func moduleName() -> String! {
+    return "ExceptionsManagerFix"
+  }
+  
+  // Main thread'de çalışsın
+  @objc static func requiresMainQueueSetup() -> Bool {
+    return true
+  }
+  
   // React Native'in exception handling'ini override etmek için
   // Native tarafında exception'ları yakala ve Sentry'ye gönder
   // Ama crash etme
   
-  @objc static func setup() {
+  // 🚨 CRITICAL: JavaScript'ten çağrılabilir metod
+  @objc func setup(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
+    // Static initialization zaten çalıştı, sadece log
+    _ = ExceptionsManagerFix._setupOnce
+    resolve(["status": "activated", "message": "Native exception handling is active"])
+  }
+  
+  // Static metod - JavaScript'ten de çağrılabilir
+  @objc static func setupStatic() {
     // Static initialization zaten çalıştı, sadece log
     _ = _setupOnce
   }

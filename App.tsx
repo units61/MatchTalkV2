@@ -16,11 +16,27 @@ function App() {
   React.useEffect(() => {
     try {
       // Native module'ü çağır (eğer mevcut ise)
-      if (global.NativeModules && global.NativeModules.ExceptionsManagerFix) {
-        global.NativeModules.ExceptionsManagerFix.setup();
+      const { NativeModules } = require('react-native');
+      if (NativeModules && NativeModules.ExceptionsManagerFix) {
+        NativeModules.ExceptionsManagerFix.setup()
+          .then((result) => {
+            Sentry.addBreadcrumb({
+              category: 'native',
+              message: 'Native exception handling activated from App.tsx',
+              level: 'info',
+              data: result,
+            });
+          })
+          .catch((error) => {
+            // Hata olsa bile devam et - static initialization zaten çalıştı
+            Sentry.captureException(error instanceof Error ? error : new Error(String(error)), {
+              level: 'warning',
+              tags: { source: 'App.useEffect.nativeExceptionHandling' },
+            });
+          });
       }
     } catch (e) {
-      // Native module yoksa devam et
+      // Native module yoksa devam et - static initialization zaten çalıştı
       Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
         level: 'warning',
         tags: { source: 'App.useEffect.nativeExceptionHandling' },
